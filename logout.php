@@ -49,4 +49,3 @@ session_destroy();
 // Redirect ไปหน้า home ด้วย relative path
 header("Location: index.php");
 exit();
-?>

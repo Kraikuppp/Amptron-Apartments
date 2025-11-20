@@ -77,5 +77,3 @@ function closeDB() {
     // PDO connection is automatically closed when script ends
     $GLOBALS['db_connected'] = false;
 }
-?>
-

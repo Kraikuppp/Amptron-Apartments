@@ -8,7 +8,11 @@ if (!defined('SITE_URL')) {
         require_once $configPath;
     } else {
         // Fallback: derive a reasonable SITE_URL from server vars to avoid fatal errors.
-        $proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) ? 'https' : 'http';
+        if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+            $proto = 'https';
+        } else {
+            $proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) ? 'https' : 'http';
+        }
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
         define('SITE_URL', rtrim($proto . '://' . $host, '/'));
         if (!defined('SITE_NAME')) {

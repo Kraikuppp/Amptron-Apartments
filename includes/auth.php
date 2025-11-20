@@ -390,4 +390,3 @@ function getBusinessProfile($userId)
         return null;
     }
 }
-?>

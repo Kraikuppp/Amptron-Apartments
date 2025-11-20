@@ -9,7 +9,11 @@ define('SITE_NAME', 'Amptron Apartment');
 
 // Auto-detect SITE_URL (รองรับทั้ง localhost และ production)
 if (!defined('SITE_URL')) {
-    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+    if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+        $protocol = 'https://';
+    } else {
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+    }
     $host = $_SERVER['HTTP_HOST'];
     
     // ตรวจสอบว่าอยู่ใน subdirectory หรือไม่
@@ -156,5 +160,3 @@ function deleteFile($filepath) {
     }
     return false;
 }
-?>
-
