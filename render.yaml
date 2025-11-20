@@ -1,53 +1,15 @@
 services:
-  # Web Service (PHP Application)
+  # Web Service (PHP Application) - No Database
   - type: web
     name: billing-rental-system
-    env: docker
+    env: php
     region: singapore
     plan: free
-    dockerfilePath: ./Dockerfile
+    buildCommand: "chmod +x build.sh && ./build.sh"
+    startCommand: "php -S 0.0.0.0:$PORT -t ."
     envVars:
-      - key: DB_HOST
-        fromDatabase:
-          name: billing-db
-          property: host
-      - key: DB_NAME
-        fromDatabase:
-          name: billing-db
-          property: database
-      - key: DB_USER
-        fromDatabase:
-          name: billing-db
-          property: user
-      - key: DB_PASS
-        fromDatabase:
-          name: billing-db
-          property: password
-      - key: DB_PORT
-        value: 3306
       - key: PHP_TIMEZONE
         value: Asia/Bangkok
-      - key: SESSION_SECURE
-        value: true
+      - key: APP_ENV
+        value: production
     healthCheckPath: /
-
-  # Database Service (MySQL)
-  - type: pserv
-    name: billing-db
-    env: docker
-    region: singapore
-    plan: free
-    dockerfilePath: ./Dockerfile.mysql
-    disk:
-      name: billing-db-data
-      mountPath: /var/lib/mysql
-      sizeGB: 1
-    envVars:
-      - key: MYSQL_DATABASE
-        value: billing_rental_system
-      - key: MYSQL_ROOT_PASSWORD
-        generateValue: true
-      - key: MYSQL_USER
-        value: billing_user
-      - key: MYSQL_PASSWORD
-        generateValue: true
