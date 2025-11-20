@@ -52,7 +52,7 @@ if (!isset($businessProfile)) {
         <a class="nav-link <?php echo $currentPage == 'profile.php' ? 'active' : ''; ?>" href="profile.php">
             <i class="bi bi-person-circle me-3 fs-5"></i> ข้อมูลธุรกิจ
         </a>
-        <a class="nav-link text-danger mt-3" href="../logout.php">
+        <a class="nav-link text-danger mt-3" href="<?php echo SITE_URL; ?>/logout.php">
             <i class="bi bi-box-arrow-right me-3 fs-5"></i> ออกจากระบบ
         </a>
     </nav>

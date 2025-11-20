@@ -21,27 +21,20 @@ if (!defined('SITE_URL')) {
     }
 }
 
-// สร้าง relative path สำหรับใช้ใน JavaScript fetch (ป้องกัน Mixed Content)
-// ใช้ relative path แทน absolute URL เพื่อให้ browser ใช้ protocol เดียวกับหน้าปัจจุบัน
-$scriptName = $_SERVER['SCRIPT_NAME'];
-$baseDir = str_replace('\\', '/', dirname($scriptName));
-
-// ถ้าอยู่ใน root ให้ใช้ / ถ้าอยู่ใน subdirectory ให้ใช้ /subdirectory
-$relativeBase = ($baseDir === '/' || $baseDir === '') ? '' : $baseDir;
-
-$logoutPath = $relativeBase . "/logout.php";
-$indexPath = $relativeBase . "/index.php";
-$loginPath = $relativeBase . "/login.php";
-$registerPath = $relativeBase . "/register.php";
-$roomsPath = $relativeBase . "/room-search.php";
-$searchPath = $relativeBase . "/search.php";
-$wishlistPath = $relativeBase . "/wishlist.php";
-$nearbyPath = $relativeBase . "/room.php?mode=nearby";
-$energyPath = $relativeBase . "/energy.php";
-$profilePath = $relativeBase . "/profile.php";
-$businessDashboardPath = $relativeBase . "/business/dashboard.php";
-$adminPath = $relativeBase . "/admin/index.php";
-$logoPath = $relativeBase . "/img/amptron-apartments.png";
+// ใช้ SITE_URL ที่ถูกต้องจาก config.php
+$logoutPath = SITE_URL . "/logout.php";
+$indexPath = SITE_URL . "/index.php";
+$loginPath = SITE_URL . "/login.php";
+$registerPath = SITE_URL . "/register.php";
+$roomsPath = SITE_URL . "/room-search.php";
+$searchPath = SITE_URL . "/search.php";
+$wishlistPath = SITE_URL . "/wishlist.php";
+$nearbyPath = SITE_URL . "/room.php?mode=nearby";
+$energyPath = SITE_URL . "/energy.php";
+$profilePath = SITE_URL . "/profile.php";
+$businessDashboardPath = SITE_URL . "/business/dashboard.php";
+$adminPath = SITE_URL . "/admin/index.php";
+$logoPath = SITE_URL . "/img/amptron-apartments.png";
 
 // Determine Home Link
 $homeLink = $indexPath;

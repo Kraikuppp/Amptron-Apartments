@@ -18,7 +18,12 @@ if (!defined('SITE_URL')) {
     
     // ตรวจสอบว่าอยู่ใน subdirectory หรือไม่
     $scriptName = $_SERVER['SCRIPT_NAME'];
-    $baseDir = str_replace('\\', '/', dirname($scriptName));
+    $dir = dirname($scriptName);
+    
+    // ลบ subdirectories ที่รู้ออกเพื่อให้ได้ root path ที่ถูกต้อง
+    // เช่น /admin, /business, /includes, /config
+    $dir = str_replace('\\', '/', $dir);
+    $baseDir = preg_replace('#/(admin|business|includes|config)$#', '', $dir);
     
     // ถ้าอยู่ใน root ให้ใช้ host อย่างเดียว
     if ($baseDir === '/' || $baseDir === '') {

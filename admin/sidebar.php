@@ -259,7 +259,7 @@ $current_page = basename($_SERVER["PHP_SELF"]);
     </nav>
 
     <div class="sidebar-footer">
-        <button onclick="location.href='../logout.php'" class="logout-btn">
+        <button onclick="location.href='<?php echo SITE_URL; ?>/logout.php'" class="logout-btn">
             <i class="bi bi-box-arrow-right"></i> ออกจากระบบ
         </button>
     </div>
