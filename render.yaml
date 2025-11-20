@@ -1,13 +1,13 @@
 services:
-  # Web Service (PHP Application) - No Database
+  # Web Service (PHP Application with Docker) - No Database
   - type: web
     name: billing-rental-system
-    env: php
+    runtime: docker
     region: singapore
     plan: free
-    buildCommand: "chmod +x build.sh && ./build.sh"
-    startCommand: "php -S 0.0.0.0:$PORT -t ."
     envVars:
+      - key: PORT
+        value: 80
       - key: PHP_TIMEZONE
         value: Asia/Bangkok
       - key: APP_ENV

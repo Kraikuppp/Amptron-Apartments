@@ -1,0 +1,136 @@
+# คำสั่งสำหรับ Deploy ขึ้น GitHub และ Render
+# คัดลอกคำสั่งเหล่านี้ไปรันใน PowerShell ทีละบรรทัด
+
+# ========================================
+# ขั้นตอนที่ 1: เตรียม GitHub Repository
+# ========================================
+
+# 1.1 สร้าง Repository บน GitHub
+# - ไปที่: https://github.com/new
+# - ชื่อ: billing-rental-system
+# - Visibility: Public
+# - คลิก "Create repository"
+
+# ========================================
+# ขั้นตอนที่ 2: Push โค้ดขึ้น GitHub
+# ========================================
+
+# 2.1 ไปที่โฟลเดอร์โปรเจค
+cd c:\xampp\htdocs\billing
+
+# 2.2 ตรวจสอบสถานะ Git
+git status
+
+# 2.3 เพิ่มไฟล์ทั้งหมด
+git add .
+
+# 2.4 Commit
+git commit -m "Add Render deployment files with Docker support"
+
+# 2.5 เชื่อมต่อกับ GitHub (แทน YOUR_USERNAME ด้วยชื่อ GitHub ของคุณ)
+git remote add origin https://github.com/YOUR_USERNAME/billing-rental-system.git
+
+# หรือถ้ามี remote อยู่แล้ว ให้ใช้คำสั่งนี้แทน:
+# git remote set-url origin https://github.com/YOUR_USERNAME/billing-rental-system.git
+
+# 2.6 ตั้งค่า branch เป็น main
+git branch -M main
+
+# 2.7 Push ขึ้น GitHub
+git push -u origin main
+
+# ========================================
+# ขั้นตอนที่ 3: Deploy บน Render
+# ========================================
+
+# 3.1 เข้า Render Dashboard
+# - ไปที่: https://dashboard.render.com
+# - Sign in with GitHub
+
+# 3.2 สร้าง Web Service
+# - คลิก "New +" → "Web Service"
+# - ค้นหา "billing-rental-system"
+# - คลิก "Connect"
+
+# 3.3 ตั้งค่า Service
+# - Name: billing-rental-system
+# - Region: Singapore
+# - Plan: Free
+# - คลิก "Create Web Service"
+
+# 3.4 รอ Deploy เสร็จ (3-5 นาที)
+# - ดูสถานะใน Dashboard
+# - เมื่อเห็น "Live" (สีเขียว) = เสร็จแล้ว!
+
+# ========================================
+# ขั้นตอนที่ 4: ทดสอบเว็บไซต์
+# ========================================
+
+# URL ของคุณจะเป็น:
+# https://billing-rental-system.onrender.com
+
+# ทดสอบ Login:
+# - Username: amptr
+# - Password: amptr
+
+# Business Dashboard:
+# - Username: business
+# - Password: business123
+
+# ========================================
+# คำสั่งเพิ่มเติม
+# ========================================
+
+# ดูสถานะ Git
+git status
+
+# ดู remote ที่ตั้งค่าไว้
+git remote -v
+
+# ดู commit history
+git log --oneline -5
+
+# Pull การเปลี่ยนแปลงล่าสุดจาก GitHub
+git pull origin main
+
+# ========================================
+# การอัพเดทโค้ดในอนาคต
+# ========================================
+
+# เมื่อแก้ไขโค้ดแล้วต้องการ deploy ใหม่:
+
+# 1. เพิ่มไฟล์ที่แก้ไข
+git add .
+
+# 2. Commit
+git commit -m "Update: คำอธิบายการแก้ไข"
+
+# 3. Push
+git push
+
+# Render จะ auto-deploy ให้อัตโนมัติ!
+
+# ========================================
+# แก้ปัญหา
+# ========================================
+
+# ถ้า push ไม่ได้ (rejected):
+git pull origin main --rebase
+git push
+
+# ถ้าต้องการ force push (ระวัง! จะเขียนทับ):
+# git push -f origin main
+
+# ถ้าต้องการยกเลิก commit ล่าสุด:
+# git reset --soft HEAD~1
+
+# ถ้าต้องการดูความแตกต่าง:
+git diff
+
+# ========================================
+# หมายเหตุ
+# ========================================
+
+# - แทน YOUR_USERNAME ด้วยชื่อ GitHub ของคุณ
+# - Repository ต้องเป็น Public สำหรับ Render Free Plan
+# - อ่านคู่มือเพิ่มเติมใน RENDER_DEPLOY_GUIDE.md
