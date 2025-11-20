@@ -6,7 +6,25 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // การตั้งค่าทั่วไป
 define('SITE_NAME', 'Amptron Apartment');
-define('SITE_URL', 'http://localhost/billing');
+
+// Auto-detect SITE_URL (รองรับทั้ง localhost และ production)
+if (!defined('SITE_URL')) {
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+    $host = $_SERVER['HTTP_HOST'];
+    
+    // ตรวจสอบว่าอยู่ใน subdirectory หรือไม่
+    $scriptName = $_SERVER['SCRIPT_NAME'];
+    $baseDir = str_replace('\\', '/', dirname($scriptName));
+    
+    // ถ้าอยู่ใน root ให้ใช้ host อย่างเดียว
+    if ($baseDir === '/' || $baseDir === '') {
+        define('SITE_URL', $protocol . $host);
+    } else {
+        // ถ้าอยู่ใน subdirectory (เช่น /billing)
+        define('SITE_URL', $protocol . $host . $baseDir);
+    }
+}
+
 define('UPLOAD_DIR', __DIR__ . '/../uploads/');
 define('MAX_FILE_SIZE', 5242880); // 5MB
 
