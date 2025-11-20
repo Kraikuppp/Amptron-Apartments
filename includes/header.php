@@ -17,21 +17,27 @@ if (!defined('SITE_URL')) {
     }
 }
 
-// ใช้ SITE_URL เพื่อสร้างลิงก์แบบ absolute ป้องกัน path เพี้ยนเมื่ออยู่ใน subdirectory
-$baseUrl = rtrim(SITE_URL, "/");
-$logoutPath = $baseUrl . "/logout.php";
-$indexPath = $baseUrl . "/index.php";
-$loginPath = $baseUrl . "/login.php";
-$registerPath = $baseUrl . "/register.php";
-$roomsPath = $baseUrl . "/room-search.php";
-$searchPath = $baseUrl . "/search.php";
-$wishlistPath = $baseUrl . "/wishlist.php";
-$nearbyPath = $baseUrl . "/room.php?mode=nearby";
-$energyPath = $baseUrl . "/energy.php";
-$profilePath = $baseUrl . "/profile.php";
-$businessDashboardPath = $baseUrl . "/business/dashboard.php";
-$adminPath = $baseUrl . "/admin/index.php";
-$logoPath = $baseUrl . "/img/amptron-apartments.png";
+// สร้าง relative path สำหรับใช้ใน JavaScript fetch (ป้องกัน Mixed Content)
+// ใช้ relative path แทน absolute URL เพื่อให้ browser ใช้ protocol เดียวกับหน้าปัจจุบัน
+$scriptName = $_SERVER['SCRIPT_NAME'];
+$baseDir = str_replace('\\', '/', dirname($scriptName));
+
+// ถ้าอยู่ใน root ให้ใช้ / ถ้าอยู่ใน subdirectory ให้ใช้ /subdirectory
+$relativeBase = ($baseDir === '/' || $baseDir === '') ? '' : $baseDir;
+
+$logoutPath = $relativeBase . "/logout.php";
+$indexPath = $relativeBase . "/index.php";
+$loginPath = $relativeBase . "/login.php";
+$registerPath = $relativeBase . "/register.php";
+$roomsPath = $relativeBase . "/room-search.php";
+$searchPath = $relativeBase . "/search.php";
+$wishlistPath = $relativeBase . "/wishlist.php";
+$nearbyPath = $relativeBase . "/room.php?mode=nearby";
+$energyPath = $relativeBase . "/energy.php";
+$profilePath = $relativeBase . "/profile.php";
+$businessDashboardPath = $relativeBase . "/business/dashboard.php";
+$adminPath = $relativeBase . "/admin/index.php";
+$logoPath = $relativeBase . "/img/amptron-apartments.png";
 
 // Determine Home Link
 $homeLink = $indexPath;
