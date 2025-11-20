@@ -44,7 +44,7 @@ if (isLoggedIn()) {
     } elseif (isBusiness()) {
         $homeLink = $businessDashboardPath;
     } else {
-        $homeLink = $baseUrl . "/my-room.php";
+        $homeLink = SITE_URL . "/my-room.php";
     }
 }
 
@@ -77,13 +77,13 @@ if (isLoggedIn()) {
                     </a>
                     <?php elseif (!isAdmin()): ?>
                     <a class="nav-link <?php echo $currentPage === "my-room.php" ? "active" : ""; ?>"
-                       href="<?php echo $baseUrl . "/my-room.php"; ?>"
+                       href="<?php echo SITE_URL . "/my-room.php"; ?>"
                        data-tooltip="ห้องของฉัน">
                         <i class="bi bi-house-door"></i>
                         <span>ห้องของฉัน</span>
                     </a>
                     <a class="nav-link <?php echo $currentPage === "news.php" ? "active" : ""; ?>"
-                       href="<?php echo $baseUrl . "/news.php"; ?>"
+                       href="<?php echo SITE_URL . "/news.php"; ?>"
                        data-tooltip="ข่าวสาร">
                         <i class="bi bi-newspaper"></i>
                         <span>ข่าวสาร</span>
@@ -286,11 +286,11 @@ if (isLoggedIn()) {
                     <span>ธุรกิจของฉัน</span>
                 </a>
                 <?php elseif (!isAdmin()): ?>
-                <a class="mobile-nav-link" href="<?php echo $baseUrl . "/my-room.php"; ?>">
+                <a class="mobile-nav-link" href="<?php echo SITE_URL . "/my-room.php"; ?>">
                     <i class="bi bi-house-door"></i>
                     <span>ห้องของฉัน</span>
                 </a>
-                <a class="mobile-nav-link" href="<?php echo $baseUrl . "/news.php"; ?>">
+                <a class="mobile-nav-link" href="<?php echo SITE_URL . "/news.php"; ?>">
                     <i class="bi bi-newspaper"></i>
                     <span>ข่าวสาร</span>
                 </a>
