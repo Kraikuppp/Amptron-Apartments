@@ -558,18 +558,13 @@ $highlightId = isset($_GET['highlight']) ? (int) $_GET['highlight'] : 0;
             center: { lat: 13.7563, lng: 100.5018 },
             zoom: 12,
             styles: [
-                { elementType: 'geometry', stylers: [{ color: '#0f172a' }] },
-                { elementType: 'labels.text.stroke', stylers: [{ color: '#0f172a' }] },
-                { elementType: 'labels.text.fill', stylers: [{ color: '#9ca3af' }] },
                 {
-                    featureType: 'poi.park',
-                    elementType: 'geometry',
-                    stylers: [{ color: '#064e3b' }]
+                    featureType: 'poi',
+                    stylers: [{ visibility: 'off' }]
                 },
                 {
-                    featureType: 'water',
-                    elementType: 'geometry',
-                    stylers: [{ color: '#0f172a' }]
+                    featureType: 'poi.lodging',
+                    stylers: [{ visibility: 'on' }]
                 }
             ]
         });

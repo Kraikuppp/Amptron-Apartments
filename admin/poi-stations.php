@@ -1,6 +1,7 @@
 <?php
 session_start();
-require_once '../config/database.php';
+require_once '../config/config.php';
+$pdo = getDB();
 
 // ตรวจสอบสิทธิ์ Admin
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
@@ -671,7 +672,7 @@ if (isset($_GET['edit']) && $_GET['edit']) {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&language=th"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=<?php echo GOOGLE_MAPS_API_KEY; ?>&language=th"></script>
     <script>
         let map;
         let marker;

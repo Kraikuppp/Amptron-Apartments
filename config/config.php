@@ -38,7 +38,7 @@ define('UPLOAD_DIR', __DIR__ . '/../uploads/');
 define('MAX_FILE_SIZE', 5242880); // 5MB
 
 
-define('GOOGLE_MAPS_API_KEY', 'YOUR_GOOGLE_MAPS_API_KEY');
+define('GOOGLE_MAPS_API_KEY', 'AIzaSyCbpqBBIxuGErqXdne9tosv0SdZSefMCdM');
 
 // ตั้งค่า Timezone
 date_default_timezone_set('Asia/Bangkok');
