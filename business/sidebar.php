@@ -34,6 +34,9 @@ if (!isset($businessProfile)) {
         <a class="nav-link <?php echo $currentPage == 'energy.php' ? 'active' : ''; ?>" href="energy.php">
             <i class="bi bi-lightning-charge me-3 fs-5"></i> จัดการไฟฟ้า
         </a>
+        <a class="nav-link <?php echo $currentPage == 'parcels.php' ? 'active' : ''; ?>" href="parcels.php">
+            <i class="bi bi-box-seam me-3 fs-5"></i> จัดการพัสดุ
+        </a>
         <a class="nav-link <?php echo $currentPage == 'service-requests.php' ? 'active' : ''; ?>" href="service-requests.php">
             <i class="bi bi-tools me-3 fs-5"></i> คำขอรับบริการ
             <?php if (isset($serviceRequests) && count($serviceRequests) > 0): ?>

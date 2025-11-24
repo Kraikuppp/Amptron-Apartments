@@ -143,6 +143,8 @@ if (!$hasDB || !$pdo) {
     $lastMonthUsage = 1672;
     $usageChange =
         (($currentMonthUsage - $lastMonthUsage) / $lastMonthUsage) * 100;
+    
+    $currentRate = 7.00; // ราคาค่าไฟต่อหน่วย (บาท)
 } else {
     // ดึงข้อมูลจากฐานข้อมูล
     try {
@@ -368,6 +370,9 @@ if (!isset($businessProfile)) {
         <div class="container position-relative z-2 text-center">
             <h1 class="display-4 fw-bold mb-3">จัดการไฟฟ้า</h1>
             <p class="lead opacity-90 mb-0">ระบบติดตามและจัดการการใช้ไฟฟ้า</p>
+            <button class="btn btn-light rounded-pill px-4 mt-3 fw-bold text-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#setRateModal">
+                <i class="bi bi-gear-fill me-2"></i>ตั้งค่าหน่วยค่าไฟ
+            </button>
         </div>
     </div>
 
@@ -533,9 +538,44 @@ if (!isset($businessProfile)) {
     </div>
 
     <?php include "../includes/footer.php"; ?>
+
+    <!-- Set Rate Modal -->
+    <div class="modal fade" id="setRateModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 20px; border: none;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">ตั้งค่าหน่วยค่าไฟ</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="setRateForm">
+                        <div class="mb-4">
+                            <label class="form-label text-muted">ราคาต่อหน่วย (บาท)</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control form-control-lg fw-bold text-primary" id="electricityRate" min="0" step="0.01" value="<?php echo $currentRate ?? 7.00; ?>">
+                                <span class="input-group-text bg-light border-0 fw-semibold">บาท / หน่วย</span>
+                            </div>
+                            <div class="form-text mt-2"><i class="bi bi-info-circle me-1"></i> ราคาที่ตั้งจะถูกนำไปคำนวณค่าไฟของทุกห้องในรอบบิลถัดไป</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 fw-bold">บันทึกการตั้งค่า</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+        // Handle Set Rate Form
+        document.getElementById('setRateForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const rate = document.getElementById('electricityRate').value;
+            // In a real app, send AJAX request to update rate in DB
+            alert(`บันทึกราคาค่าไฟ ${rate} บาท/หน่วย เรียบร้อยแล้ว`);
+            bootstrap.Modal.getInstance(document.getElementById('setRateModal')).hide();
+            // location.reload(); // Optional: reload to reflect changes
+        });
         // Daily Usage Chart
         const dailyCtx = document.getElementById('dailyUsageChart').getContext('2d');
         const dailyData = <?php echo json_encode($dailyUsage); ?>;

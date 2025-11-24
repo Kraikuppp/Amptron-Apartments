@@ -1520,7 +1520,10 @@ $dailyApts         = mock_get_daily_apartments(5);
     <style>
         /* Rental Tabs Styles */
         .rental-tabs-section {
-            padding: 30px 0;
+            padding: 10px 0 30px 0;
+            margin-top: -30px;
+            position: relative;
+            z-index: 10;
             background: linear-gradient(to bottom, #ffffff 0%, #f8fafc 100%);
             border-bottom: 1px solid #e2e8f0;
         }
@@ -1652,47 +1655,43 @@ $dailyApts         = mock_get_daily_apartments(5);
     <!-- Old sections removed, now using tab content above -->
 
     <!-- Statistics Section -->
-    <section class="py-5" style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);">
+    <section class="py-5 bg-light">
         <div class="container">
-            <div class="text-center mb-5">
-                <h2 class="section-title">สถิติแพลตฟอร์มของเรา</h2>
-                <p class="text-muted">ร่วมเป็นส่วนหนึ่งกับลูกค้าหลายพันรายที่พึงพอใจ</p>
-            </div>
             <div class="row g-4 text-center">
-                <div class="col-lg-3 col-md-6">
-                    <div class="stats-card p-4">
-                        <div class="stats-icon mb-3">
-                            <i class="bi bi-building-fill" style="font-size: 3rem; color: var(--primary-blue);"></i>
+                <div class="col-md-3 col-6">
+                    <div class="stats-card p-4 h-100">
+                        <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10 mb-3" style="width: 70px; height: 70px;">
+                            <i class="bi bi-building-check text-primary" style="font-size: 2rem;"></i>
                         </div>
-                        <h3 class="fw-bold mb-2" style="color: var(--dark-gray);">1,250+</h3>
-                        <p class="text-muted mb-0">ห้องพักที่พร้อมให้เช่า</p>
+                        <h3 class="fw-bold text-dark mb-1">1,500+</h3>
+                        <p class="text-muted mb-0">ห้องพักในระบบ</p>
                     </div>
                 </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="stats-card p-4">
-                        <div class="stats-icon mb-3">
-                            <i class="bi bi-people-fill" style="font-size: 3rem; color: var(--secondary-blue);"></i>
+                <div class="col-md-3 col-6">
+                    <div class="stats-card p-4 h-100">
+                        <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-success bg-opacity-10 mb-3" style="width: 70px; height: 70px;">
+                            <i class="bi bi-people-fill text-success" style="font-size: 2rem;"></i>
                         </div>
-                        <h3 class="fw-bold mb-2" style="color: var(--dark-gray);">5,800+</h3>
-                        <p class="text-muted mb-0">ลูกค้าที่พึงพอใจ</p>
+                        <h3 class="fw-bold text-dark mb-1">5,000+</h3>
+                        <p class="text-muted mb-0">ผู้ใช้งานต่อเดือน</p>
                     </div>
                 </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="stats-card p-4">
-                        <div class="stats-icon mb-3">
-                            <i class="bi bi-box-seam-fill" style="font-size: 3rem; color: var(--sky-blue);"></i>
+                <div class="col-md-3 col-6">
+                    <div class="stats-card p-4 h-100">
+                        <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-warning bg-opacity-10 mb-3" style="width: 70px; height: 70px;">
+                            <i class="bi bi-emoji-smile-fill text-warning" style="font-size: 2rem;"></i>
                         </div>
-                        <h3 class="fw-bold mb-2" style="color: var(--dark-gray);">850+</h3>
-                        <p class="text-muted mb-0">สินค้าคุณภาพ</p>
+                        <h3 class="fw-bold text-dark mb-1">98%</h3>
+                        <p class="text-muted mb-0">ความพึงพอใจ</p>
                     </div>
                 </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="stats-card p-4">
-                        <div class="stats-icon mb-3">
-                            <i class="bi bi-star-fill" style="font-size: 3rem; color: #f59e0b;"></i>
+                <div class="col-md-3 col-6">
+                    <div class="stats-card p-4 h-100">
+                        <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-info bg-opacity-10 mb-3" style="width: 70px; height: 70px;">
+                            <i class="bi bi-headset text-info" style="font-size: 2rem;"></i>
                         </div>
-                        <h3 class="fw-bold mb-2" style="color: var(--dark-gray);">4.8/5</h3>
-                        <p class="text-muted mb-0">คะแนนเฉลี่ย</p>
+                        <h3 class="fw-bold text-dark mb-1">24/7</h3>
+                        <p class="text-muted mb-0">บริการช่วยเหลือ</p>
                     </div>
                 </div>
             </div>
@@ -1700,83 +1699,83 @@ $dailyApts         = mock_get_daily_apartments(5);
     </section>
 
     <!-- Testimonials Section -->
-    <section class="py-5">
+    <section class="py-5 bg-light">
         <div class="container">
             <div class="text-center mb-5">
                 <h2 class="section-title">ลูกค้าของเราพูดว่าอย่างไร</h2>
-                <p class="text-muted">ประสบการณ์จริงจากลูกค้าที่พึงพอใจ</p>
+                <p class="text-muted">เสียงตอบรับจากผู้ใช้งานจริงทั้งผู้เช่าและเจ้าของหอพัก</p>
             </div>
             <div class="row g-4">
                 <div class="col-md-4">
-                    <div class="testimonial-card p-4 h-100">
-                        <div class="stars mb-3">
-                            <i class="bi bi-star-fill text-warning"></i>
-                            <i class="bi bi-star-fill text-warning"></i>
-                            <i class="bi bi-star-fill text-warning"></i>
-                            <i class="bi bi-star-fill text-warning"></i>
-                            <i class="bi bi-star-fill text-warning"></i>
+                    <div class="card border-0 shadow-sm h-100 p-4">
+                        <div class="mb-3 text-warning">
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
                         </div>
-                        <p class="testimonial-text">"เจอห้องที่เหมาะสมในกรุงเทพภายในหนึ่งสัปดาห์! แพลตฟอร์มใช้งานง่าย และเจ้าของห้องตอบสนองรวดเร็วมาก"</p>
+                        <p class="card-text text-muted mb-4">"หาหอพักง่ายมากครับ มีตัวกรองที่ละเอียด ทำให้เจอห้องที่ตรงใจทั้งราคาและทำเล ระบบจองออนไลน์ก็สะดวก ไม่ต้องเสียเวลาเดินทางไปดูหลายที่"</p>
                         <div class="testimonial-author mt-3">
                             <div class="d-flex align-items-center">
                                 <div class="avatar me-3">
                                     <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                                        <span class="fw-bold">AS</span>
-                                    </div>
-                                </div>
-                                <div>
-                                    <h6 class="mb-0">Apinya S.</h6>
-                                    <small class="text-muted">ดิจิทัล โนแมด</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="testimonial-card p-4 h-100">
-                        <div class="stars mb-3">
-                            <i class="bi bi-star-fill text-warning"></i>
-                            <i class="bi bi-star-fill text-warning"></i>
-                            <i class="bi bi-star-fill text-warning"></i>
-                            <i class="bi bi-star-fill text-warning"></i>
-                            <i class="bi bi-star-fill text-warning"></i>
-                        </div>
-                        <p class="testimonial-text">"สินค้าไฟฟ้าครบครัน จัดส่งรวดเร็ว บริการลูกค้าดีเยี่ยม แนะนำสำหรับธุรกิจ!"</p>
-                        <div class="testimonial-author mt-3">
-                            <div class="d-flex align-items-center">
-                                <div class="avatar me-3">
-                                    <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
                                         <span class="fw-bold">SK</span>
                                     </div>
                                 </div>
                                 <div>
-                                    <h6 class="mb-0">Somchai K.</h6>
-                                    <small class="text-muted">วิศวกรไฟฟ้า</small>
+                                    <h6 class="mb-0" style="font-family: var(--font-thai);">สมชาย เข็มกลัด</h6>
+                                    <small class="text-muted">นักศึกษา</small>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="testimonial-card p-4 h-100">
-                        <div class="stars mb-3">
-                            <i class="bi bi-star-fill text-warning"></i>
-                            <i class="bi bi-star-fill text-warning"></i>
-                            <i class="bi bi-star-fill text-warning"></i>
-                            <i class="bi bi-star-fill text-warning"></i>
-                            <i class="bi bi-star text-muted"></i>
+                    <div class="card border-0 shadow-sm h-100 p-4">
+                        <div class="mb-3 text-warning">
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
                         </div>
-                        <p class="testimonial-text">"แพลตฟอร์มช่วยให้ฉันหาผู้เช่าที่มีคุณภาพสำหรับห้องของฉัน กระบวนการตรวจสอบทำให้มั่นใจในการให้เช่า"</p>
+                        <p class="card-text text-muted mb-4">"ประทับใจระบบจัดการบิลและแจ้งซ่อมมากค่ะ ช่วยลดภาระงานเอกสารไปได้เยอะ ผู้เช่าก็จ่ายเงินตรงเวลาขึ้นเพราะมีการแจ้งเตือนผ่านไลน์"</p>
                         <div class="testimonial-author mt-3">
                             <div class="d-flex align-items-center">
                                 <div class="avatar me-3">
                                     <div class="rounded-circle bg-info text-white d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                                        <span class="fw-bold">NW</span>
+                                        <span class="fw-bold">VP</span>
                                     </div>
                                 </div>
                                 <div>
-                                    <h6 class="mb-0">Niran W.</h6>
-                                    <small class="text-muted">เจ้าของห้อง</small>
+                                    <h6 class="mb-0" style="font-family: var(--font-thai);">วิภาดา พรหมมา</h6>
+                                    <small class="text-muted">เจ้าของหอพัก</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100 p-4">
+                        <div class="mb-3 text-warning">
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-half"></i>
+                        </div>
+                        <p class="card-text text-muted mb-4">"ชอบที่พักรายวันที่มีให้เลือกเยอะครับ รูปตรงปก สะอาด ราคาไม่แพง เหมาะสำหรับคนทำงานที่ต้องเดินทางบ่อยๆ แนะนำเลยครับ"</p>
+                        <div class="testimonial-author mt-3">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar me-3">
+                                    <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                        <span class="fw-bold">TC</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0" style="font-family: var(--font-thai);">ธนชาต ชูชีพ</h6>
+                                    <small class="text-muted">พนักงานบริษัท</small>
                                 </div>
                             </div>
                         </div>
@@ -1787,77 +1786,64 @@ $dailyApts         = mock_get_daily_apartments(5);
     </section>
 
     <!-- FAQ Section -->
-    <section class="py-5 bg-section-light">
+    <section class="py-5">
         <div class="container">
-            <div class="text-center mb-5">
-                <h2 class="section-title">คำถามที่พบบ่อย</h2>
-                <p class="text-muted">คำตอบสำหรับคำถามที่ถูกถามบ่อย</p>
-            </div>
-            <div class="row">
-                <div class="col-lg-8 mx-auto">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="text-center mb-5">
+                        <h2 class="section-title">คำถามที่พบบ่อย</h2>
+                        <p class="text-muted">รวมคำถามยอดฮิตเกี่ยวกับการใช้งาน Amptron Apartments</p>
+                    </div>
                     <div class="accordion" id="faqAccordion">
-                        <div class="accordion-item mb-3">
+                        <div class="accordion-item mb-3 border rounded overflow-hidden">
                             <h2 class="accordion-header">
                                 <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
-                                    <i class="bi bi-question-circle me-2 text-primary"></i>
-                                    ฉันจะค้นหาห้องเช่าได้อย่างไร?
+                                    <i class="bi bi-search me-2 text-primary"></i>
+                                    ฉันจะจองห้องพักได้อย่างไร?
                                 </button>
                             </h2>
                             <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
-                                <div class="accordion-body">
-                                    คุณสามารถใช้แบบฟอร์มค้นหาบนหน้าแรกเพื่อกรองห้องตามสถานที่ จังหวัด และราคาสูงสุด หรือคลิกปุ่ม "ดูห้องทั้งหมด" เพื่อเรียกดูห้องที่มีทั้งหมด
+                                <div class="accordion-body text-muted">
+                                    คุณสามารถค้นหาห้องพักที่ต้องการผ่านหน้าเว็บไซต์ เลือกดูรายละเอียดห้องพัก และกดปุ่ม "จองห้องพัก" หรือ "ติดต่อสอบถาม" เพื่อดำเนินการจองผ่านระบบออนไลน์ได้ทันที
                                 </div>
                             </div>
                         </div>
-                        <div class="accordion-item mb-3">
+                        <div class="accordion-item mb-3 border rounded overflow-hidden">
                             <h2 class="accordion-header">
                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
-                                    <i class="bi bi-shield-check me-2 text-primary"></i>
-                                    ห้องเช่าได้รับการตรวจสอบหรือไม่?
+                                    <i class="bi bi-cash-coin me-2 text-primary"></i>
+                                    ช่องทางการชำระเงินมีอะไรบ้าง?
                                 </button>
                             </h2>
                             <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                                <div class="accordion-body">
-                                    ใฌ่ครับ ห้องเช่าทั้งหมดบนแพลตฟอร์มของเราจะผ่านกระบวนการตรวจสอบ เราตรวจสอบเอกสารทรัพย์สินและรูปภาพเพื่อรับรองความถูกต้องก่อนอนุมัติรายการ
+                                <div class="accordion-body text-muted">
+                                    เรารองรับการชำระเงินหลากหลายช่องทาง ทั้งการโอนเงินผ่านธนาคาร (Mobile Banking), บัตรเครดิต/เดบิต และ QR Code Payment เพื่อความสะดวกของผู้ใช้งาน
                                 </div>
                             </div>
                         </div>
-                        <div class="accordion-item mb-3">
+                        <div class="accordion-item mb-3 border rounded overflow-hidden">
                             <h2 class="accordion-header">
                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
-                                    <i class="bi bi-credit-card me-2 text-primary"></i>
-                                    รับชำระเงินแบบไหนบ้าง?
+                                    <i class="bi bi-tools me-2 text-primary"></i>
+                                    หากอุปกรณ์ในห้องชำรุดต้องทำอย่างไร?
                                 </button>
                             </h2>
                             <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                                <div class="accordion-body">
-                                    เรารับวิธีการชำระเงินหลากหลาย รวมถึงโอนเงินผ่านธนาคาร บัตรเครดิต/เดบิต และกระเป๋าเงินดิจิทัล เงื่อนไขการชำระเงินจะตกลงโดยตรงกับเจ้าของห้อง
+                                <div class="accordion-body text-muted">
+                                    ผู้เช่าสามารถแจ้งซ่อมผ่านเมนู "แจ้งซ่อม" ในระบบสมาชิกได้ตลอด 24 ชั่วโมง โดยระบุรายละเอียดและแนบรูปถ่าย เจ้าหน้าที่จะประสานงานช่างเข้าดำเนินการแก้ไขโดยเร็วที่สุด
                                 </div>
                             </div>
                         </div>
-                        <div class="accordion-item mb-3">
+                        <div class="accordion-item mb-3 border rounded overflow-hidden">
                             <h2 class="accordion-header">
                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
-                                    <i class="bi bi-tools me-2 text-primary"></i>
-                                    คุณขายอุปกรณ์ไฟฟ้าหรือไม่?
+                                    <i class="bi bi-shield-check me-2 text-primary"></i>
+                                    สัญญาเช่ามีระยะเวลาเท่าไหร่?
                                 </button>
                             </h2>
                             <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                                <div class="accordion-body">
-                                    ใฌ่ครับ! เรามีอุปกรณ์ไฟฟ้าหลากหลาย รวมถึงมิเตอร์ไฟฟ้า หม้อแปลงกระแส CT และอุปกรณ์ตรวจวัดสำหรับทั้งที่อยู่อาศัยและเชิงพาณิชย์ สินค้าทั้งหมดมีการรับประกันและสนับสนุนทางเทคนิค
-                                </div>
-                            </div>
-                        </div>
-                        <div class="accordion-item mb-3">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5">
-                                    <i class="bi bi-building me-2 text-primary"></i>
-                                    ฉันจะลงประกาศห้องของฉันได้อย่างไร?
-                                </button>
-                            </h2>
-                            <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                                <div class="accordion-body">
-                                    สมัครเป็นผู้ใช้ธุรกิจและเข้าสู่แดชบอร์ด คุณสามารถเพิ่มรายละเอียดห้อง รูปภาพ และตั้งราคา ทีมงานของเราจะตรวจสอบและอนุมัติรายการของคุณภายใน 24-48 ชั่วโมง
+                                <div class="accordion-body text-muted">
+                                    ระยะเวลาสัญญาเช่าขึ้นอยู่กับเงื่อนไขของแต่ละหอพัก โดยทั่วไปสัญญาเช่ารายเดือนจะเริ่มต้นที่ 6 เดือน หรือ 1 ปี ส่วนห้องพักรายวันสามารถจองได้ตั้งแต่ 1 คืนขึ้นไป
                                 </div>
                             </div>
                         </div>

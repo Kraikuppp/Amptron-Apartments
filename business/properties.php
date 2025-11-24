@@ -201,6 +201,9 @@ if (!isset($properties)) {
         .status-available { background: #ecfdf5; color: #059669; }
         .status-rented { background: #fef2f2; color: #dc2626; }
         .status-maintenance { background: #fffbeb; color: #d97706; }
+        
+        .cursor-pointer { cursor: pointer; }
+        .cursor-pointer:hover { background-color: #e2e8f0 !important; }
     </style>
 </head>
 <body>
@@ -253,11 +256,11 @@ if (!isset($properties)) {
                         <table class="table table-hover align-middle">
                             <thead class="table-light">
                                 <tr>
-                                    <th class="border-0 rounded-start-3">ห้อง</th>
-                                    <th class="border-0">ราคา/เดือน</th>
-                                    <th class="border-0">สถานะ</th>
-                                    <th class="border-0">ผู้เช่า</th>
-                                    <th class="border-0">หมดสัญญา</th>
+                                    <th class="border-0 rounded-start-3 cursor-pointer" onclick="sortTable(0)">ห้อง <i class="bi bi-arrow-down-up small text-muted ms-1"></i></th>
+                                    <th class="border-0 cursor-pointer" onclick="sortTable(1)">ราคา/เดือน <i class="bi bi-arrow-down-up small text-muted ms-1"></i></th>
+                                    <th class="border-0 cursor-pointer" onclick="sortTable(2)">สถานะ <i class="bi bi-arrow-down-up small text-muted ms-1"></i></th>
+                                    <th class="border-0 cursor-pointer" onclick="sortTable(3)">ผู้เช่า <i class="bi bi-arrow-down-up small text-muted ms-1"></i></th>
+                                    <th class="border-0 cursor-pointer" onclick="sortTable(4)">หมดสัญญา <i class="bi bi-arrow-down-up small text-muted ms-1"></i></th>
                                     <th class="border-0 rounded-end-3 text-end">จัดการ</th>
                                 </tr>
                             </thead>
@@ -437,6 +440,60 @@ if (!isset($properties)) {
             bootstrap.Modal.getInstance(document.getElementById('editPriceModal')).hide();
             location.reload(); // Refresh to see changes (mock)
         });
+
+        function sortTable(n) {
+            var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+            table = document.querySelector(".table");
+            switching = true;
+            // Set the sorting direction to ascending:
+            dir = "asc";
+            
+            while (switching) {
+                switching = false;
+                rows = table.rows;
+                
+                // Loop through all table rows (except the first, which contains table headers):
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    
+                    x = rows[i].getElementsByTagName("TD")[n];
+                    y = rows[i + 1].getElementsByTagName("TD")[n];
+                    
+                    // Get content based on column type
+                    let xContent = x.innerText.toLowerCase();
+                    let yContent = y.innerText.toLowerCase();
+                    
+                    // Special handling for Price column (index 1) - remove currency symbol and commas
+                    if (n === 1) {
+                        xContent = parseFloat(xContent.replace(/[^0-9.-]+/g,""));
+                        yContent = parseFloat(yContent.replace(/[^0-9.-]+/g,""));
+                    }
+                    
+                    if (dir == "asc") {
+                        if (xContent > yContent) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    } else if (dir == "desc") {
+                        if (xContent < yContent) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                    switchcount++;
+                } else {
+                    if (switchcount == 0 && dir == "asc") {
+                        dir = "desc";
+                        switching = true;
+                    }
+                }
+            }
+        }
     </script>
 </body>
 </html>
