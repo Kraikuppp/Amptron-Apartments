@@ -5,7 +5,7 @@ require_once 'includes/mock_apartments.php';
 
 $roomId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
-// ดึงข้อมูลจาก mock data
+// Fetch room from mock data
 $allApartments = mock_get_all_apartments();
 $room = null;
 
@@ -21,19 +21,22 @@ if (!$room) {
     exit;
 }
 
-// Mock images - ใช้ thumbnail เป็นรูปหลัก
+// Mock images - use thumbnail as main image
 $roomImages = [
     ['image_path' => $room['thumbnail']],
 ];
 
+// Parse amenities from mock data
+$amenities = $room['amenities'] ?? [];
+
 // Mock reviews
 $reviews = [];
 $rating = [
-    'avg_rating' => $room['rating'],
+    'avg_rating' => $room['rating'] ?? 4.5,
     'total_reviews' => 0
 ];
 
-// ตรวจสอบ wishlist
+// Check wishlist
 $inWishlist = false;
 if (isLoggedIn()) {
     // $inWishlist = isInWishlist($_SESSION['user_id'], $roomId);
@@ -71,7 +74,13 @@ if (isLoggedIn()) {
                             <div class="carousel-inner">
                                 <?php foreach ($roomImages as $index => $image): ?>
                                 <div class="carousel-item <?php echo $index === 0 ? 'active' : ''; ?>">
-                                    <img src="<?php echo htmlspecialchars($image['image_path']); ?>" class="d-block w-100" alt="Room Image" style="height: 500px; object-fit: cover;">
+                                    <?php 
+                                    $imgSrc = $image['image_path'];
+                                    if (!empty($imgSrc) && !str_starts_with($imgSrc, 'http') && !str_starts_with($imgSrc, 'uploads/')) {
+                                        $imgSrc = 'uploads/' . $imgSrc;
+                                    }
+                                    ?>
+                                    <img src="<?php echo htmlspecialchars($imgSrc); ?>" class="d-block w-100" alt="Room Image" style="height: 500px; object-fit: cover;">
                                 </div>
                                 <?php endforeach; ?>
                             </div>
@@ -125,7 +134,7 @@ if (isLoggedIn()) {
                         <h5>รายละเอียด</h5>
                         <p><?php echo nl2br(htmlspecialchars($room['description'])); ?></p>
                         
-                        <?php if (!empty($room['amenities'])): ?>
+                        <?php if (!empty($amenities)): ?>
                         <h5 class="mt-4">สิ่งอำนวยความสะดวก</h5>
                         <div class="row">
                             <?php 
@@ -150,7 +159,7 @@ if (isLoggedIn()) {
                                 'เครื่องซักผ้าหยอดเหรียญ' => 'bi-droplet-fill',
                                 'คาเฟ่ชั้นล่าง' => 'bi-cup-straw',
                             ];
-                            foreach ($room['amenities'] as $amenity): 
+                            foreach ($amenities as $amenity): 
                                 $icon = $amenityIcons[$amenity] ?? 'bi-check-circle-fill';
                             ?>
                                 <div class="col-md-6 mb-3">

@@ -220,16 +220,22 @@ $newsData = [
                         </div>
                         <h3 class="news-title"><?php echo $news['title']; ?></h3>
                         <p class="news-desc"><?php echo $news['content']; ?></p>
-                        <a href="#" class="read-more-btn" 
-                           data-bs-toggle="modal" 
-                           data-bs-target="#newsModal"
-                           data-title="<?php echo htmlspecialchars($news['title']); ?>"
-                           data-date="<?php echo date('d/m/Y', strtotime($news['date'])); ?>"
-                           data-content="<?php echo htmlspecialchars($news['content']); ?>"
-                           data-image="<?php echo $news['image']; ?>"
-                           data-type="<?php echo $news['type']; ?>">
-                            อ่านเพิ่มเติม <i class="bi bi-arrow-right"></i>
-                        </a>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <a href="#" class="read-more-btn" 
+                               data-bs-toggle="modal" 
+                               data-bs-target="#newsModal"
+                               data-id="<?php echo $news['id']; ?>"
+                               data-title="<?php echo htmlspecialchars($news['title']); ?>"
+                               data-date="<?php echo date('d/m/Y', strtotime($news['date'])); ?>"
+                               data-content="<?php echo htmlspecialchars($news['content']); ?>"
+                               data-image="<?php echo $news['image']; ?>"
+                               data-type="<?php echo $news['type']; ?>">
+                                อ่านเพิ่มเติม <i class="bi bi-arrow-right"></i>
+                            </a>
+                            <button class="btn btn-sm btn-outline-primary rounded-pill px-3 btn-acknowledge" data-news-id="<?php echo $news['id']; ?>">
+                                <i class="bi bi-check-circle me-1"></i> รับทราบ
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -257,8 +263,11 @@ $newsData = [
                 <div class="modal-body p-4 p-lg-5">
                     <p id="modalNewsContent" class="text-secondary mb-0" style="line-height: 1.8; font-size: 1.1rem; white-space: pre-line;"></p>
                 </div>
-                <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                <div class="modal-footer border-0 px-4 pb-4 pt-0 justify-content-between">
                     <button type="button" class="btn btn-light rounded-pill px-4 fw-semibold" data-bs-dismiss="modal">ปิดหน้าต่าง</button>
+                    <button type="button" class="btn btn-primary rounded-pill px-4 fw-semibold" id="modalAcknowledgeBtn">
+                        <i class="bi bi-check-circle me-2"></i>กดรับทราบข่าวสาร
+                    </button>
                 </div>
             </div>
         </div>
@@ -267,6 +276,34 @@ $newsData = [
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize acknowledged state from localStorage
+            const acknowledgedNews = JSON.parse(localStorage.getItem('acknowledgedNews') || '[]');
+            
+            // Update buttons on page load
+            updateAcknowledgeButtons(acknowledgedNews);
+
+            // Handle acknowledge button clicks (in cards)
+            document.querySelectorAll('.btn-acknowledge').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const newsId = this.getAttribute('data-news-id');
+                    acknowledgeNews(newsId);
+                });
+            });
+
+            // Handle acknowledge button click (in modal)
+            const modalAcknowledgeBtn = document.getElementById('modalAcknowledgeBtn');
+            if (modalAcknowledgeBtn) {
+                modalAcknowledgeBtn.addEventListener('click', function() {
+                    const newsId = this.getAttribute('data-news-id');
+                    if (newsId) {
+                        acknowledgeNews(newsId);
+                        // Optional: Close modal after acknowledging
+                        // bootstrap.Modal.getInstance(document.getElementById('newsModal')).hide();
+                    }
+                });
+            }
+
             const newsModal = document.getElementById('newsModal');
             if (newsModal) {
                 newsModal.addEventListener('show.bs.modal', function(event) {
@@ -274,6 +311,7 @@ $newsData = [
                     const button = event.relatedTarget;
                     
                     // Extract info from data-* attributes
+                    const id = button.getAttribute('data-id');
                     const title = button.getAttribute('data-title');
                     const date = button.getAttribute('data-date');
                     const content = button.getAttribute('data-content');
@@ -287,6 +325,12 @@ $newsData = [
                     const modalImage = newsModal.querySelector('#modalNewsImage');
                     const modalBadge = newsModal.querySelector('#modalNewsBadge');
                     
+                    // Set ID to the modal acknowledge button
+                    modalAcknowledgeBtn.setAttribute('data-news-id', id);
+                    
+                    // Update modal button state
+                    updateModalButtonState(id);
+
                     modalTitle.textContent = title;
                     modalDate.textContent = date;
                     modalContent.textContent = content;
@@ -317,6 +361,48 @@ $newsData = [
                     modalBadge.className = 'badge mb-2 px-3 py-2 rounded-pill ' + badgeClass;
                     modalBadge.innerHTML = badgeIcon + ' ' + badgeText;
                 });
+            }
+
+            function acknowledgeNews(id) {
+                let acknowledged = JSON.parse(localStorage.getItem('acknowledgedNews') || '[]');
+                if (!acknowledged.includes(id)) {
+                    acknowledged.push(id);
+                    localStorage.setItem('acknowledgedNews', JSON.stringify(acknowledged));
+                    
+                    // Update UI
+                    updateAcknowledgeButtons(acknowledged);
+                    updateModalButtonState(id);
+                    
+                    // Show small feedback
+                    // alert('รับทราบข่าวสารเรียบร้อยแล้ว');
+                }
+            }
+
+            function updateAcknowledgeButtons(acknowledgedIds) {
+                document.querySelectorAll('.btn-acknowledge').forEach(btn => {
+                    const id = btn.getAttribute('data-news-id');
+                    if (acknowledgedIds.includes(id)) {
+                        btn.classList.remove('btn-outline-primary');
+                        btn.classList.add('btn-success', 'disabled');
+                        btn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> รับทราบแล้ว';
+                        btn.style.pointerEvents = 'none';
+                    }
+                });
+            }
+
+            function updateModalButtonState(id) {
+                const acknowledged = JSON.parse(localStorage.getItem('acknowledgedNews') || '[]');
+                if (acknowledged.includes(id)) {
+                    modalAcknowledgeBtn.classList.remove('btn-primary');
+                    modalAcknowledgeBtn.classList.add('btn-success');
+                    modalAcknowledgeBtn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>รับทราบแล้ว';
+                    modalAcknowledgeBtn.disabled = true;
+                } else {
+                    modalAcknowledgeBtn.classList.remove('btn-success');
+                    modalAcknowledgeBtn.classList.add('btn-primary');
+                    modalAcknowledgeBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>กดรับทราบข่าวสาร';
+                    modalAcknowledgeBtn.disabled = false;
+                }
             }
         });
     </script>

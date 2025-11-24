@@ -121,6 +121,16 @@ sort($amenityLabels, SORT_NATURAL | SORT_FLAG_CASE);
             background: transparent;
         }
 
+        /* Hide number input arrows */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
         .btn-search-main {
             padding: 10px 20px;
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
@@ -212,73 +222,78 @@ sort($amenityLabels, SORT_NATURAL | SORT_FLAG_CASE);
 
         <!-- TOP HORIZONTAL SEARCH BAR (same layout as room.php) -->
         <div class="search-panel mb-4">
-            <div class="row g-3 align-items-end">
+            <div class="row g-2 align-items-center">
                 <div class="col-md-4">
                     <label class="search-label">ค้นหาชื่ออพาร์ตเม้น / ทำเล</label>
                     <div class="input-with-icon">
                         <i class="bi bi-search text-primary"></i>
-                        <input type="text" id="keyword" placeholder="ชื่อ, เขต, จังหวัด หรือคำอธิบาย" onkeyup="applyFilters()">
+                        <input type="text" id="keyword" placeholder="ชื่อ, เขต, จังหวัด" onkeyup="applyFilters()">
                     </div>
                 </div>
 
                 <div class="col-md-2">
-                    <label class="search-label">ประเภทการเช่า</label>
+                    <label class="search-label">ประเภท</label>
                     <div class="input-with-icon">
                         <i class="bi bi-calendar2-week text-primary"></i>
                         <select id="rentalType" onchange="applyFilters()">
                             <option value="">ทั้งหมด</option>
-                            <option value="monthly">รายเดือน</option>
-                            <option value="daily">รายวัน</option>
+                            <option value="monthly">เดือน</option>
+                            <option value="daily">วัน</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="col-md-3">
-                    <label class="search-label">ช่วงราคา (บาท)</label>
+                    <label class="search-label">ช่วงราคา (บาท) <small id="priceRangeLabel" class="text-muted ms-1">ทุกช่วงราคา</small></label>
                     <div class="d-flex align-items-center gap-2">
-                        <input type="range" id="priceRange" class="form-range" min="0" max="30000" step="1000" value="0" oninput="updatePriceRangeLabel()" onchange="applyFilters()">
-                        <span id="priceRangeLabel" class="small text-muted">ทุกช่วงราคา</span>
+                        <input type="range" id="priceRange" class="form-range" min="100" max="5000000" step="10000" value="100" oninput="updatePriceFromSlider()" onchange="applyFilters()" style="flex: 1;">
+                        <div class="input-with-icon" style="padding: 6px 10px; width: 120px;">
+                            <span style="font-size: 0.85rem; color: var(--medium-gray);">฿</span>
+                            <input type="number" id="priceInput" class="border-0 outline-0" style="width: 100%; font-size: 0.85rem;" min="100" max="5000000" step="10000" value="5000000" placeholder="ไม่จำกัด" oninput="updatePriceFromInput()" onchange="applyFilters()">
+                        </div>
                     </div>
                 </div>
 
-                <div class="col-md-3">
-                    <label class="search-label">ตัวกรองเพิ่มเติม</label>
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="dropdown">
-                            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="advancedFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-sliders"></i> เลือกตัวกรอง
-                            </button>
-                            <div class="dropdown-menu p-3" aria-labelledby="advancedFilterDropdown" style="min-width: 260px; max-height: 260px; overflow-y: auto;">
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input amenity-filter" type="checkbox" value="__petFriendly" id="filterPetFriendly">
-                                    <label class="form-check-label" for="filterPetFriendly">
-                                        <i class="bi bi-heart-pulse text-danger"></i> เลี้ยงสัตว์ได้
-                                    </label>
-                                </div>
-                                <?php if (!empty($amenityLabels)): ?>
-                                    <hr class="my-2">
-                                    <small class="text-muted d-block mb-2">สิ่งอำนวยความสะดวก</small>
-                                    <?php foreach ($amenityLabels as $idx => $label): ?>
-                                        <?php $inputId = 'amenity_filter_' . $idx; ?>
-                                        <div class="form-check mb-1">
-                                            <input class="form-check-input amenity-filter" type="checkbox" value="<?php echo htmlspecialchars($label); ?>" id="<?php echo $inputId; ?>">
-                                            <label class="form-check-label" for="<?php echo $inputId; ?>">
-                                                <?php echo htmlspecialchars($label); ?>
-                                            </label>
-                                        </div>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
+                <div class="col-md-1">
+                    <label class="search-label">&nbsp;</label>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle w-100" type="button" id="advancedFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="padding: 10px 8px;" title="ตัวกรอง">
+                            <i class="bi bi-sliders"></i>
+                        </button>
+                        <div class="dropdown-menu p-3" aria-labelledby="advancedFilterDropdown" style="min-width: 260px; max-height: 260px; overflow-y: auto;">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input amenity-filter" type="checkbox" value="__petFriendly" id="filterPetFriendly">
+                                <label class="form-check-label" for="filterPetFriendly">
+                                    <i class="bi bi-heart-pulse text-danger"></i> เลี้ยงสัตว์ได้
+                                </label>
                             </div>
+                            <?php if (!empty($amenityLabels)): ?>
+                                <hr class="my-2">
+                                <small class="text-muted d-block mb-2">สิ่งอำนวยความสะดวก</small>
+                                <?php foreach ($amenityLabels as $idx => $label): ?>
+                                    <?php $inputId = 'amenity_filter_' . $idx; ?>
+                                    <div class="form-check mb-1">
+                                        <input class="form-check-input amenity-filter" type="checkbox" value="<?php echo htmlspecialchars($label); ?>" id="<?php echo $inputId; ?>">
+                                        <label class="form-check-label" for="<?php echo $inputId; ?>">
+                                            <?php echo htmlspecialchars($label); ?>
+                                        </label>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </div>
-                        <div class="d-flex gap-2 ms-auto">
-                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetFilters()">
-                                <i class="bi bi-arrow-clockwise"></i>
-                            </button>
-                            <button type="button" class="btn-search-main btn-sm" onclick="applyFilters()">
-                                <i class="bi bi-search"></i>
-                                ค้นหาผลลัพธ์
-                            </button>
-                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="search-label d-block">&nbsp;</label>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-secondary" onclick="resetFilters()" title="รีเซ็ต" style="padding: 10px 14px;">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                        <button type="button" class="btn-search-main flex-grow-1" onclick="applyFilters()" style="padding: 10px 20px;">
+                            <i class="bi bi-search"></i>
+                            ค้นหา
+                        </button>
                     </div>
                 </div>
             </div>
@@ -286,7 +301,7 @@ sort($amenityLabels, SORT_NATURAL | SORT_FLAG_CASE);
 
         <!-- SUMMARY -->
         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-            <h2 class="h5 mb-0">สรุปผลการค้นหา</h2>
+            <h2 class="h5 mb-0" style="font-family: var(--font-thai), var(--font-english);">สรุปผลการค้นหา</h2>
             <small id="resultSummary" class="text-muted">พบ <?php echo count($allApartments); ?> ห้อง จากข้อมูลทั้งหมด</small>
         </div>
 
@@ -326,9 +341,9 @@ sort($amenityLabels, SORT_NATURAL | SORT_FLAG_CASE);
         const keyword = (document.getElementById('keyword').value || '').toLowerCase();
         const rentalType = document.getElementById('rentalType').value;
         const priceSlider = document.getElementById('priceRange');
-        const sliderVal = priceSlider ? parseFloat(priceSlider.value) || 0 : 0;
+        const sliderVal = priceSlider ? parseFloat(priceSlider.value) || 100 : 100;
         const minPrice = 0;
-        const maxPrice = sliderVal > 0 ? sliderVal : Infinity;
+        const maxPrice = sliderVal > 100 ? sliderVal : Infinity;
 
         const amenityChecked = Array.from(document.querySelectorAll('.amenity-filter:checked'));
         const selectedAmenities = [];
@@ -390,10 +405,14 @@ sort($amenityLabels, SORT_NATURAL | SORT_FLAG_CASE);
         document.getElementById('keyword').value = '';
         document.getElementById('rentalType').value = '';
         const priceSlider = document.getElementById('priceRange');
+        const priceInput = document.getElementById('priceInput');
         if (priceSlider) {
-            priceSlider.value = 0;
-            updatePriceRangeLabel();
+            priceSlider.value = 100;
         }
+        if (priceInput) {
+            priceInput.value = 5000000;
+        }
+        updatePriceFromSlider();
         document.querySelectorAll('.amenity-filter').forEach(cb => {
             cb.checked = false;
         });
@@ -432,6 +451,38 @@ sort($amenityLabels, SORT_NATURAL | SORT_FLAG_CASE);
                 const priceText = apt.price_monthly ? `฿${Number(apt.price_monthly).toLocaleString()}/เดือน` : '';
                 const typeLabel = apt.type === 'condo' ? 'คอนโด' : 'อพาร์ตเม้นท์';
 
+                // Build amenities display
+                let amenitiesHTML = '';
+                if (apt.max_occupancy || (apt.amenities && apt.amenities.length > 0)) {
+                    amenitiesHTML = '<div class="mb-2"><small class="text-muted d-flex flex-wrap gap-2">';
+                    
+                    // Add max occupancy
+                    if (apt.max_occupancy) {
+                        amenitiesHTML += `<span><i class="bi bi-people-fill" style="color: var(--primary-color);"></i> อยู่ได้ ${apt.max_occupancy} คน</span>`;
+                    }
+                    
+                    // Add other amenities (max 2)
+                    if (apt.amenities && apt.amenities.length > 0) {
+                        const amenityIcons = {
+                            'WiFi': 'bi-wifi',
+                            'ที่จอดรถ': 'bi-car-front-fill',
+                            'ฟิตเนส': 'bi-heart-pulse-fill',
+                            'สระว่ายน้ำ': 'bi-water',
+                            'วิวแม่น้ำ': 'bi-water',
+                            'ครัว': 'bi-cup-hot-fill',
+                            'แอร์': 'bi-snow',
+                            'เครื่องปรับอากาศ': 'bi-snow'
+                        };
+                        const displayAmenities = apt.amenities.slice(0, 2);
+                        displayAmenities.forEach(amenity => {
+                            const icon = amenityIcons[amenity] || 'bi-check-circle-fill';
+                            amenitiesHTML += `<span><i class="${icon}" style="color: var(--primary-color);"></i> ${amenity}</span>`;
+                        });
+                    }
+                    
+                    amenitiesHTML += '</small></div>';
+                }
+
                 col.innerHTML = `
                     <div class="card room-card h-100">
                         <div class="position-relative">
@@ -446,6 +497,7 @@ sort($amenityLabels, SORT_NATURAL | SORT_FLAG_CASE);
                                 ${(apt.district || '') + ', ' + (apt.province || '')}
                             </p>
                             <p class="apt-desc-text text-truncate mb-2">${apt.description || ''}</p>
+                            ${amenitiesHTML}
                             <div class="d-flex justify-content-between align-items-center">
                                 <small class="text-muted">
                                     <i class="bi bi-star-fill text-warning"></i>
@@ -473,6 +525,38 @@ sort($amenityLabels, SORT_NATURAL | SORT_FLAG_CASE);
                 const priceText = apt.price_daily ? `฿${Number(apt.price_daily).toLocaleString()}/คืน` : '';
                 const typeLabel = apt.type === 'condo' ? 'คอนโด' : 'อพาร์ตเม้นท์';
 
+                // Build amenities display
+                let amenitiesHTML = '';
+                if (apt.max_occupancy || (apt.amenities && apt.amenities.length > 0)) {
+                    amenitiesHTML = '<div class="mb-2"><small class="text-muted d-flex flex-wrap gap-2">';
+                    
+                    // Add max occupancy
+                    if (apt.max_occupancy) {
+                        amenitiesHTML += `<span><i class="bi bi-people-fill" style="color: var(--primary-color);"></i> อยู่ได้ ${apt.max_occupancy} คน</span>`;
+                    }
+                    
+                    // Add other amenities (max 2)
+                    if (apt.amenities && apt.amenities.length > 0) {
+                        const amenityIcons = {
+                            'WiFi': 'bi-wifi',
+                            'ที่จอดรถ': 'bi-car-front-fill',
+                            'ฟิตเนส': 'bi-heart-pulse-fill',
+                            'สระว่ายน้ำ': 'bi-water',
+                            'วิวแม่น้ำ': 'bi-water',
+                            'ครัว': 'bi-cup-hot-fill',
+                            'แอร์': 'bi-snow',
+                            'เครื่องปรับอากาศ': 'bi-snow'
+                        };
+                        const displayAmenities = apt.amenities.slice(0, 2);
+                        displayAmenities.forEach(amenity => {
+                            const icon = amenityIcons[amenity] || 'bi-check-circle-fill';
+                            amenitiesHTML += `<span><i class="${icon}" style="color: var(--primary-color);"></i> ${amenity}</span>`;
+                        });
+                    }
+                    
+                    amenitiesHTML += '</small></div>';
+                }
+
                 col.innerHTML = `
                     <div class="card room-card h-100">
                         <div class="position-relative">
@@ -487,6 +571,7 @@ sort($amenityLabels, SORT_NATURAL | SORT_FLAG_CASE);
                                 ${(apt.district || '') + ', ' + (apt.province || '')}
                             </p>
                             <p class="apt-desc-text text-truncate mb-2">${apt.description || ''}</p>
+                            ${amenitiesHTML}
                             <div class="d-flex justify-content-between align-items-center">
                                 <small class="text-muted">
                                     <i class="bi bi-star-fill text-warning"></i>
@@ -504,20 +589,53 @@ sort($amenityLabels, SORT_NATURAL | SORT_FLAG_CASE);
         }
     }
 
-    function updatePriceRangeLabel() {
+    function updatePriceFromSlider() {
         const slider = document.getElementById('priceRange');
+        const input = document.getElementById('priceInput');
         const label = document.getElementById('priceRangeLabel');
-        if (!slider || !label) return;
-        const val = parseFloat(slider.value) || 0;
-        if (val <= 0) {
+        
+        if (!slider || !input || !label) return;
+        
+        const val = parseFloat(slider.value) || 100;
+        input.value = val;
+        
+        if (val <= 100) {
             label.textContent = 'ทุกช่วงราคา';
         } else {
             label.textContent = `ไม่เกิน ฿${val.toLocaleString()}`;
         }
     }
 
+    function updatePriceFromInput() {
+        const slider = document.getElementById('priceRange');
+        const input = document.getElementById('priceInput');
+        const label = document.getElementById('priceRangeLabel');
+        
+        if (!slider || !input || !label) return;
+        
+        let val = parseFloat(input.value) || 100;
+        
+        // จำกัดค่าให้อยู่ในช่วงที่กำหนด
+        if (val < 100) val = 100;
+        if (val > 5000000) val = 5000000;
+        
+        input.value = val;
+        slider.value = val;
+        
+        if (val <= 100) {
+            label.textContent = 'ทุกช่วงราคา';
+        } else {
+            label.textContent = `ไม่เกิน ฿${val.toLocaleString()}`;
+        }
+    }
+
+    function updatePriceRangeLabel() {
+        // Fallback function for compatibility
+        updatePriceFromSlider();
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
-        updatePriceRangeLabel();
+        updatePriceFromSlider();
         renderLists(currentFiltered);
     });
 </script>

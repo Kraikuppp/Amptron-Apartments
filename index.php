@@ -20,88 +20,7 @@ $popularApts       = mock_get_popular_apartments(5);
 $monthlyApts       = mock_get_monthly_apartments(5);
 $dailyApts         = mock_get_daily_apartments(5);
 
-// Handle search-box filters using the same mock data
-$searchResults = [];
-$hasSearch = false;
-if ($_GET) {
-    $keyword       = trim($_GET['keyword'] ?? '');
-    $rentalType    = $_GET['rental_type'] ?? '';
-    $priceRange    = $_GET['price_range'] ?? '';
-    $petFriendly   = isset($_GET['pet_friendly']) && $_GET['pet_friendly'] === '1';
-    $province      = $_GET['province'] ?? '';
 
-    $hasSearch = $keyword !== '' || $rentalType !== '' || $priceRange !== '' || $petFriendly || $province !== '';
-
-    if ($hasSearch) {
-        $all = mock_get_all_apartments();
-
-        $minPrice = null;
-        $maxPrice = null;
-        if ($priceRange && strpos($priceRange, '-') !== false) {
-            [$minStr, $maxStr] = explode('-', $priceRange, 2);
-            $minPrice = is_numeric($minStr) ? (int) $minStr : null;
-            $maxPrice = is_numeric($maxStr) ? (int) $maxStr : null;
-        }
-
-        $searchResults = array_values(array_filter($all, function ($apt) use (
-            $keyword,
-            $rentalType,
-            $province,
-            $petFriendly,
-            $minPrice,
-            $maxPrice
-        ) {
-            // rental_type filter
-            if ($rentalType && !in_array($rentalType, $apt['rental_type'], true)) {
-                return false;
-            }
-
-            // province filter
-            if ($province && ($apt['province'] ?? '') !== $province) {
-                return false;
-            }
-
-            // pet friendly filter
-            if ($petFriendly && empty($apt['pet_friendly'])) {
-                return false;
-            }
-
-            // keyword filter (name, district, province, description)
-            if ($keyword !== '') {
-                $haystack = ($apt['name'] ?? '') . ' ' . ($apt['district'] ?? '') . ' ' . ($apt['province'] ?? '') . ' ' . ($apt['description'] ?? '');
-                $haystackLower = function_exists('mb_strtolower') ? mb_strtolower($haystack, 'UTF-8') : strtolower($haystack);
-                $needleLower   = function_exists('mb_strtolower') ? mb_strtolower($keyword, 'UTF-8') : strtolower($keyword);
-
-                if (strpos($haystackLower, $needleLower) === false) {
-                    return false;
-                }
-            }
-
-            // price range filter
-            if ($minPrice !== null || $maxPrice !== null) {
-                $priceField = $rentalType === 'daily' ? 'price_daily' : 'price_monthly';
-                $price = $apt[$priceField] ?? null;
-                if ($price === null) {
-                    return false;
-                }
-                if ($minPrice !== null && $price < $minPrice) {
-                    return false;
-                }
-                if ($maxPrice !== null && $price > $maxPrice) {
-                    return false;
-                }
-            }
-
-            return true;
-        }));
-
-        if (!empty($searchResults)) {
-            usort($searchResults, function ($a, $b) {
-                return ($b['rating'] <=> $a['rating']) ?: ($b['views'] <=> $a['views']);
-            });
-        }
-    }
-}
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -162,315 +81,7 @@ if ($_GET) {
             letter-spacing: -0.02em;
         }
 
-        /* Search Form Styles */
-        .search-tabs {
-            display: flex;
-            gap: 8px;
-            padding: 16px 16px 0 16px;
-            background: white;
-        }
 
-        .search-tab {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 24px;
-            border: none;
-            background: transparent;
-            color: var(--medium-gray);
-            font-weight: 600;
-            border-bottom: 3px solid transparent;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .search-tab:hover {
-            color: var(--primary-color);
-        }
-
-        .search-tab.active {
-            color: var(--primary-color);
-            border-bottom-color: var(--primary-color);
-        }
-
-        .search-form-main {
-            padding: 24px;
-        }
-
-        .search-input-row {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) auto;
-            gap: 12px;
-            align-items: end;
-        }
-
-        .search-field {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .search-label {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--dark-gray);
-        }
-
-        .input-with-icon {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 16px;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            background: white;
-            transition: all 0.3s ease;
-        }
-
-        .input-with-icon:focus-within {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-
-        .input-with-icon i {
-            font-size: 1.1rem;
-        }
-
-        .search-input {
-            flex: 1;
-            border: none;
-            outline: none;
-            font-size: 0.95rem;
-            color: var(--dark-gray);
-        }
-
-        .search-input::placeholder {
-            color: var(--medium-gray);
-        }
-
-        .btn-search-main {
-            padding: 12px 32px;
-            background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            white-space: nowrap;
-        }
-
-        .btn-search-main:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
-        }
-
-        .btn-comparison {
-            background: transparent;
-            border: 2px solid var(--primary-color);
-            color: var(--primary-color);
-            font-weight: 600;
-            padding: 10px 24px;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-comparison:hover {
-            background: var(--primary-color);
-            color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-        }
-
-        .btn-comparison.active {
-            background: var(--primary-color);
-            color: white;
-        }
-
-        .btn-advanced-filters {
-            background: transparent;
-            border: 2px solid var(--medium-gray);
-            color: var(--medium-gray);
-            font-weight: 600;
-            padding: 10px 24px;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-advanced-filters:hover {
-            border-color: var(--primary-color);
-            color: var(--primary-color);
-            background: rgba(59, 130, 246, 0.05);
-        }
-
-        .btn-advanced-filters.active {
-            border-color: var(--primary-color);
-            color: var(--primary-color);
-            background: rgba(59, 130, 246, 0.1);
-        }
-
-        .facility-checkbox-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 16px;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            background: white;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .facility-checkbox-item:hover {
-            border-color: var(--primary-color);
-            background: rgba(59, 130, 246, 0.02);
-        }
-
-        .facility-checkbox-item input[type="checkbox"]:checked + label,
-        .facility-checkbox-item:has(input[type="checkbox"]:checked) {
-            border-color: var(--primary-color);
-            background: rgba(59, 130, 246, 0.08);
-        }
-
-        .facility-checkbox-item .form-check-input {
-            width: 20px;
-            height: 20px;
-            border: 2px solid #cbd5e0;
-            cursor: pointer;
-            margin: 0;
-        }
-
-        .facility-checkbox-item .form-check-input:checked {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-
-        .facility-checkbox-item .form-check-label {
-            cursor: pointer;
-            margin: 0;
-            font-weight: 500;
-            color: var(--dark-gray);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex: 1;
-        }
-
-        .facility-checkbox-item .form-check-label i {
-            font-size: 1.1rem;
-        }
-
-        .advanced-filters-section {
-            padding: 20px;
-            background: var(--light-gray);
-            border-radius: 12px;
-            margin-top: 16px;
-        }
-
-        /* Inline filters under main search */
-        .search-filters-inline {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-top: 8px;
-        }
-
-        .search-filters-inline .filter-item {
-            flex: 1 1 200px;
-            min-width: 0;
-        }
-
-        .search-filters-inline .search-input,
-        .search-filters-inline .form-select {
-            width: 100%;
-        }
-
-        .pet-filter-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 16px;
-            border-radius: 999px;
-            border: 2px solid #e2e8f0;
-            background: white;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            font-size: 0.9rem;
-            color: var(--medium-gray);
-            user-select: none;
-        }
-
-        .pet-filter-chip i {
-            color: var(--primary-color);
-        }
-
-        .pet-filter-input {
-            display: none;
-        }
-
-        .pet-filter-input:checked + .pet-filter-chip {
-            border-color: var(--primary-color);
-            background: rgba(59, 130, 246, 0.06);
-            color: var(--primary-color);
-        }
-
-        /* Guest Modal Styles */
-        .guest-counter {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 0;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .guest-counter:last-child {
-            border-bottom: none;
-        }
-
-        .counter-controls {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .btn-counter {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            border: 2px solid #e2e8f0;
-            background: white;
-            color: var(--primary-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-counter:hover {
-            border-color: var(--primary-color);
-            background: var(--primary-color);
-            color: white;
-        }
-
-        .counter-value {
-            font-weight: 600;
-            font-size: 1.1rem;
-            min-width: 30px;
-            text-align: center;
-        }
 
         /* Card Styles */
         .room-card, .product-card {
@@ -546,332 +157,7 @@ if ($_GET) {
             }
         }
 
-        /* Hero Banner Section */
-        .hero-banner-section {
-            position: relative;
-            margin-bottom: 120px;
-        }
 
-        .hero-banner-carousel {
-            position: relative;
-            height: 500px;
-            overflow: hidden;
-        }
-
-        .hero-banner-img {
-            height: 500px;
-            width: 100%;
-            object-fit: cover;
-            object-position: center;
-            filter: brightness(0.75);
-            transition: transform 0.5s ease;
-        }
-
-.carousel-item.active .hero-banner-img {
-            animation: none;
-        }
-
-        .carousel-overlay {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(
-                to bottom,
-                rgba(0, 0, 0, 0.3) 0%,
-                rgba(0, 0, 0, 0.4) 50%,
-                rgba(0, 0, 0, 0.5) 100%
-            );
-            pointer-events: none;
-        }
-
-        /* Carousel Indicators */
-        .carousel-indicators {
-            bottom: 140px;
-            margin-bottom: 0;
-            z-index: 15;
-        }
-
-        .carousel-indicators [data-bs-target] {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background-color: rgba(255, 255, 255, 0.5);
-            border: 2px solid rgba(255, 255, 255, 0.8);
-            margin: 0 6px;
-            transition: all 0.3s ease;
-        }
-
-        .carousel-indicators .active {
-            width: 30px;
-            border-radius: 5px;
-            background-color: white;
-        }
-
-        /* Modern Carousel Controls */
-        .carousel-control-prev,
-        .carousel-control-next {
-            width: 60px;
-            height: 60px;
-            top: 50%;
-            transform: translateY(-50%);
-            opacity: 0;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 15;
-        }
-
-        .hero-banner-carousel:hover .carousel-control-prev,
-        .hero-banner-carousel:hover .carousel-control-next {
-            opacity: 1;
-        }
-
-        .carousel-control-prev {
-            left: 30px;
-        }
-
-        .carousel-control-next {
-            right: 30px;
-        }
-
-        .carousel-control-prev:hover {
-            transform: translateY(-50%) translateX(-5px);
-        }
-
-        .carousel-control-next:hover {
-            transform: translateY(-50%) translateX(5px);
-        }
-
-        /* Custom Modern Arrow Icons */
-        .carousel-control-prev-icon,
-        .carousel-control-next-icon {
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: 50%;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .carousel-control-prev-icon::before,
-        .carousel-control-next-icon::before {
-            content: '';
-            width: 14px;
-            height: 14px;
-            border-left: 3px solid white;
-            border-bottom: 3px solid white;
-            position: absolute;
-            transition: all 0.3s ease;
-        }
-
-        .carousel-control-prev-icon::before {
-            transform: rotate(45deg);
-            left: 24px;
-        }
-
-        .carousel-control-next-icon::before {
-            transform: rotate(-135deg);
-            right: 24px;
-        }
-
-        .carousel-control-prev:hover .carousel-control-prev-icon,
-        .carousel-control-next:hover .carousel-control-next-icon {
-            background: rgba(255, 255, 255, 0.25);
-            border-color: rgba(255, 255, 255, 0.5);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-            transform: scale(1.1);
-        }
-
-        .carousel-control-prev:hover .carousel-control-prev-icon::before,
-        .carousel-control-next:hover .carousel-control-next-icon::before {
-            border-color: #ffffff;
-            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.5));
-        }
-
-        /* Remove default Bootstrap backgrounds */
-        .carousel-control-prev-icon,
-        .carousel-control-next-icon {
-            background-image: none !important;
-        }
-
-        /* Search Box Overlay */
-        .search-box-overlay {
-            position: absolute;
-            bottom: -80px;
-            left: 0;
-            right: 0;
-            z-index: 20;
-        }
-
-        .search-box-wrapper {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-
-        .search-box-card {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(20px);
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.5);
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 1200px) {
-            .hero-banner-carousel {
-                height: 450px;
-            }
-            
-            .hero-banner-img {
-                height: 450px;
-            }
-        }
-
-        @media (max-width: 992px) {
-            .hero-banner-carousel {
-                height: 400px;
-            }
-            
-            .hero-banner-img {
-                height: 400px;
-            }
-            
-            .search-box-overlay {
-                bottom: -100px;
-            }
-            
-            .hero-banner-section {
-                margin-bottom: 140px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .hero-banner-carousel {
-                height: 350px;
-            }
-            
-            .hero-banner-img {
-                height: 350px;
-            }
-            
-            .carousel-indicators {
-                bottom: 120px;
-            }
-            
-            .search-box-overlay {
-                bottom: -120px;
-            }
-            
-            .hero-banner-section {
-                margin-bottom: 160px;
-            }
-            
-            .carousel-control-prev,
-            .carousel-control-next {
-                width: 50px;
-                height: 50px;
-            }
-            
-            .carousel-control-prev {
-                left: 20px;
-            }
-            
-            .carousel-control-next {
-                right: 20px;
-            }
-            
-            .carousel-control-prev-icon,
-            .carousel-control-next-icon {
-                width: 50px;
-                height: 50px;
-            }
-            
-            .carousel-control-prev-icon::before,
-            .carousel-control-next-icon::before {
-                width: 12px;
-                height: 12px;
-                border-width: 2.5px;
-            }
-            
-            .carousel-control-prev-icon::before {
-                left: 20px;
-            }
-            
-            .carousel-control-next-icon::before {
-                right: 20px;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .hero-banner-carousel {
-                height: 280px;
-            }
-            
-            .hero-banner-img {
-                height: 280px;
-            }
-            
-            .carousel-indicators {
-                bottom: 100px;
-            }
-            
-            .carousel-indicators [data-bs-target] {
-                width: 8px;
-                height: 8px;
-                margin: 0 4px;
-            }
-            
-            .carousel-indicators .active {
-                width: 20px;
-            }
-            
-            .carousel-control-prev,
-            .carousel-control-next {
-                width: 44px;
-                height: 44px;
-            }
-            
-            .carousel-control-prev {
-                left: 10px;
-            }
-            
-            .carousel-control-next {
-                right: 10px;
-            }
-            
-            .carousel-control-prev-icon,
-            .carousel-control-next-icon {
-                width: 44px;
-                height: 44px;
-                border-width: 1.5px;
-            }
-            
-            .carousel-control-prev-icon::before,
-            .carousel-control-next-icon::before {
-                width: 10px;
-                height: 10px;
-                border-width: 2px;
-            }
-            
-            .carousel-control-prev-icon::before {
-                left: 18px;
-            }
-            
-            .carousel-control-next-icon::before {
-                right: 18px;
-            }
-            
-            /* Always show controls on mobile for better UX */
-            .carousel-control-prev,
-            .carousel-control-next {
-                opacity: 0.7;
-            }
-        }
 
         /* Category Filter Buttons */
         .category-filter-section {
@@ -1092,344 +378,7 @@ if ($_GET) {
 <body>
     <?php include "includes/header.php"; ?>
 
-    <!-- Hero Background Carousel with Search Box -->
-    <section class="hero-banner-section">
-        <div class="container-fluid p-0">
-            <!-- Background Image Carousel -->
-            <div id="heroBannerCarousel" class="carousel slide hero-banner-carousel" data-bs-ride="carousel" data-bs-interval="4000">
-                <!-- Carousel Indicators -->
-                <div class="carousel-indicators">
-                    <button type="button" data-bs-target="#heroBannerCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-                    <button type="button" data-bs-target="#heroBannerCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
-                    <button type="button" data-bs-target="#heroBannerCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
-                    <button type="button" data-bs-target="#heroBannerCarousel" data-bs-slide-to="3" aria-label="Slide 4"></button>
-                    <button type="button" data-bs-target="#heroBannerCarousel" data-bs-slide-to="4" aria-label="Slide 5"></button>
-                </div>
-                
-                <!-- Carousel Slides -->
-                <div class="carousel-inner">
-                    <!-- Slide 1: Modern Hotel Room -->
-                    <div class="carousel-item active">
-                        <img src="https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=1920&h=600&fit=crop&q=80" 
-                             class="d-block w-100 hero-banner-img" 
-                             alt="Modern Hotel Room">
-                        <div class="carousel-overlay"></div>
-                    </div>
-                    
-                    <!-- Slide 2: Luxury Bedroom -->
-                    <div class="carousel-item">
-                        <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1920&h=600&fit=crop&q=80" 
-                             class="d-block w-100 hero-banner-img" 
-                             alt="Luxury Bedroom">
-                        <div class="carousel-overlay"></div>
-                    </div>
-                    
-                    <!-- Slide 3: Cozy Apartment -->
-                    <div class="carousel-item">
-                        <img src="https://media.istockphoto.com/id/2180053464/photo/living-room-luxury-house-in-modern-style-white-sofa-with-pool-and-sea-view-3d-rendering.webp?a=1&b=1&s=612x612&w=0&k=20&c=6fN2N6Wf-B4SdCdc9gw9t6C9em12iazuP4z2mLVncX8=" 
-                             class="d-block w-100 hero-banner-img" 
-                             alt="Cozy Apartment">
-                        <div class="carousel-overlay"></div>
-                    </div>
-                    
-                    <!-- Slide 4: Modern Living Space -->
-                    <div class="carousel-item">
-                        <img src="https://images.unsplash.com/photo-1574362848149-11496d93a7c7?q=80&w=1084&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
-                             class="d-block w-100 hero-banner-img" 
-                             alt="Modern Living Space">
-                        <div class="carousel-overlay"></div>
-                    </div>
-                    
-                    <!-- Slide 5: Elegant Hotel Suite -->
-                    <div class="carousel-item">
-                        <img src="https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=1920&h=600&fit=crop&q=80" 
-                             class="d-block w-100 hero-banner-img" 
-                             alt="Elegant Hotel Suite">
-                        <div class="carousel-overlay"></div>
-                    </div>
-                </div>
 
-                <!-- Carousel Controls -->
-                <button class="carousel-control-prev" type="button" data-bs-target="#heroBannerCarousel" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                    <span class="visually-hidden">Previous</span>
-                </button>
-                <button class="carousel-control-next" type="button" data-bs-target="#heroBannerCarousel" data-bs-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                    <span class="visually-hidden">Next</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Overlapping Search Box -->
-        <div class="search-box-overlay">
-            <div class="container">
-                <div class="search-box-wrapper">
-                    <div class="search-box-card">
-                        <div class="search-tabs">
-                            <button type="button" class="search-tab active" data-tab="monthly" data-rental-type="monthly">
-                                <i class="bi bi-building"></i>
-                                <span>อพาร์ตเม้นรายเดือน</span>
-                            </button>
-                            <button type="button" class="search-tab" data-tab="daily" data-rental-type="daily">
-                                <i class="bi bi-sun"></i>
-                                <span>อพาร์ตเม้นรายวัน</span>
-                            </button>
-                        </div>
-
-                        <form action="index.php" method="get" class="search-form-main">
-                            <input type="hidden" name="rental_type" id="rental_type_input" value="monthly">
-                            <!-- Location Input -->
-                            <div class="search-input-row">
-                                <div class="search-field search-field-location">
-                                    <label class="search-label">ชื่อเมือง สถานที่ หรืออพาร์ตเมนต์</label>
-                                    <div class="input-with-icon">
-                                        <i class="bi bi-geo-alt-fill text-primary"></i>
-                                        <input type="text" 
-                                               name="keyword" 
-                                               class="search-input" 
-                                               placeholder="เมือง, อพาร์ตเมนต์, วิลล่า หรือสถานที่"
-                                               autocomplete="off">
-                                    </div>
-                                </div>
-
-                                <!-- Search Button -->
-                                <div class="search-field search-field-button">
-                                    <button type="submit" class="btn-search-main">
-                                        <i class="bi bi-search me-2"></i>
-                                        ค้นหา
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Inline Filters: Price range + Pet friendly -->
-                            <div class="search-filters-inline mt-2">
-                                <div class="filter-item">
-                                    <label class="search-label">ช่วงราคา</label>
-                                    <select name="price_range" class="form-select">
-                                        <option value="">ทุกช่วงราคา</option>
-                                        <option value="0-5000">ไม่เกิน 5,000 บาท/เดือน</option>
-                                        <option value="5000-8000">5,000 - 8,000 บาท/เดือน</option>
-                                        <option value="8000-12000">8,000 - 12,000 บาท/เดือน</option>
-                                        <option value="12000-20000">12,000 - 20,000 บาท/เดือน</option>
-                                        <option value="20000-999999">มากกว่า 20,000 บาท/เดือน</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <!-- Advanced Filters Button -->
-                            <div class="text-center mt-3">
-                                <button type="button" class="btn-comparison" onclick="toggleComparisonMode()">
-                                    <i class="bi bi-arrow-left-right"></i>
-                                    เปรียบเทียบห้อง
-                                    <span id="comparisonCount" class="badge bg-primary rounded-pill ms-2" style="display: none;">0</span>
-                                </button>
-                                
-                                <button type="button" class="btn-advanced-filters ms-2" onclick="toggleAdvancedFilters()">
-                                    <i class="bi bi-sliders"></i>
-                                    ตัวกรองเพิ่มเติม
-                                    <i class="bi bi-chevron-down ms-1" id="advancedFilterIcon"></i>
-                                </button>
-                            </div>
-                                </button>
-                            </div>
-
-                            <!-- Advanced Filters Section -->
-                            <div id="advancedFiltersSection" class="advanced-filters-section" style="display: none;">
-                                <div class="row g-3">
-                                    <div class="col-md-3 col-sm-6">
-                                        <div class="facility-checkbox-item">
-                                            <input type="checkbox" class="form-check-input" id="filter_wifi" name="facilities[]" value="wifi">
-                                            <label class="form-check-label" for="filter_wifi">
-                                                <i class="bi bi-wifi text-primary"></i> WiFi
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 col-sm-6">
-                                        <div class="facility-checkbox-item">
-                                            <input type="checkbox" class="form-check-input" id="filter_air" name="facilities[]" value="air_conditioner">
-                                            <label class="form-check-label" for="filter_air">
-                                                <i class="bi bi-snow text-info"></i> เครื่องปรับอากาศ
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 col-sm-6">
-                                        <div class="facility-checkbox-item">
-                                            <input type="checkbox" class="form-check-input" id="filter_parking" name="facilities[]" value="parking">
-                                            <label class="form-check-label" for="filter_parking">
-                                                <i class="bi bi-car-front text-success"></i> ที่จอดรถ
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 col-sm-6">
-                                        <div class="facility-checkbox-item">
-                                            <input type="checkbox" class="form-check-input" id="filter_pool" name="facilities[]" value="pool">
-                                            <label class="form-check-label" for="filter_pool">
-                                                <i class="bi bi-water text-primary"></i> สระว่ายน้ำ
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 col-sm-6">
-                                        <div class="facility-checkbox-item">
-                                            <input type="checkbox" class="form-check-input" id="filter_gym" name="facilities[]" value="gym">
-                                            <label class="form-check-label" for="filter_gym">
-                                                <i class="bi bi-heart-pulse text-danger"></i> ฟิตเนส
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 col-sm-6">
-                                        <div class="facility-checkbox-item">
-                                            <input type="checkbox" class="form-check-input" id="filter_elevator" name="facilities[]" value="elevator">
-                                            <label class="form-check-label" for="filter_elevator">
-                                                <i class="bi bi-arrow-up-square text-secondary"></i> ลิฟต์
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 col-sm-6">
-                                        <div class="facility-checkbox-item">
-                                            <input type="checkbox" class="form-check-input" id="filter_security" name="facilities[]" value="security">
-                                            <label class="form-check-label" for="filter_security">
-                                                <i class="bi bi-shield-check text-warning"></i> รปภ. 24 ชม.
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 col-sm-6">
-                                        <div class="facility-checkbox-item">
-                                            <input type="checkbox" class="form-check-input" id="filter_cctv" name="facilities[]" value="cctv">
-                                            <label class="form-check-label" for="filter_cctv">
-                                                <i class="bi bi-camera-video text-dark"></i> กล้องวงจรปิด
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 col-sm-6">
-                                        <div class="facility-checkbox-item">
-                                            <input type="checkbox" class="form-check-input" id="filter_laundry" name="facilities[]" value="laundry">
-                                            <label class="form-check-label" for="filter_laundry">
-                                                <i class="bi bi-moisture text-info"></i> เครื่องซักผ้า
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 col-sm-6">
-                                        <div class="facility-checkbox-item">
-                                            <input type="checkbox" class="form-check-input" id="filter_kitchen" name="facilities[]" value="kitchen">
-                                            <label class="form-check-label" for="filter_kitchen">
-                                                <i class="bi bi-egg-fried text-warning"></i> ครัว
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 col-sm-6">
-                                        <div class="facility-checkbox-item">
-                                            <input type="checkbox" class="form-check-input" id="filter_furniture" name="facilities[]" value="furniture">
-                                            <label class="form-check-label" for="filter_furniture">
-                                                <i class="bi bi-house-door text-success"></i> เฟอร์นิเจอร์
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 col-sm-6">
-                                        <div class="facility-checkbox-item">
-                                            <input type="checkbox" class="form-check-input" id="filter_balcony" name="facilities[]" value="balcony">
-                                            <label class="form-check-label" for="filter_balcony">
-                                                <i class="bi bi-building text-primary"></i> ระเบียง
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="text-end mt-3">
-                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearFilters()">
-                                        <i class="bi bi-x-circle me-1"></i>ล้างตัวกรอง
-                                    </button>
-                                    <button type="submit" class="btn btn-sm btn-primary ms-2">
-                                        <i class="bi bi-search me-1"></i>ค้นหา
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Comparison Mode Message -->
-                            <div id="comparisonModeMessage" class="alert alert-info mt-3" style="display: none;">
-                                <i class="bi bi-info-circle me-2"></i>
-                                <strong>โหมดเปรียบเทียบ:</strong> เลือกห้องที่ต้องการเปรียบเทียบ (สูงสุด 3 ห้อง)
-                                <button type="button" class="btn btn-sm btn-primary ms-3" onclick="showComparison()">
-                                    <i class="bi bi-eye me-1"></i>ดูการเปรียบเทียบ
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary ms-2" onclick="clearComparison()">
-                                    <i class="bi bi-x-circle me-1"></i>ล้าง
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Guests Modal -->
-    <div class="modal fade" id="guestsModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">เลือกจำนวนผู้เข้าพักและห้อง</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <!-- Adults -->
-                    <div class="guest-counter mb-3">
-                        <div class="guest-label">
-                            <strong>ผู้ใหญ่</strong>
-                            <small class="text-muted">อายุ 18 ปีขึ้นไป</small>
-                        </div>
-                        <div class="counter-controls">
-                            <button type="button" class="btn-counter" onclick="changeCount('adults', -1)">
-                                <i class="bi bi-dash"></i>
-                            </button>
-                            <span id="adultsCount" class="counter-value">2</span>
-                            <button type="button" class="btn-counter" onclick="changeCount('adults', 1)">
-                                <i class="bi bi-plus"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Children -->
-                    <div class="guest-counter mb-3">
-                        <div class="guest-label">
-                            <strong>เด็ก</strong>
-                            <small class="text-muted">อายุ 0-17 ปี</small>
-                        </div>
-                        <div class="counter-controls">
-                            <button type="button" class="btn-counter" onclick="changeCount('children', -1)">
-                                <i class="bi bi-dash"></i>
-                            </button>
-                            <span id="childrenCount" class="counter-value">0</span>
-                            <button type="button" class="btn-counter" onclick="changeCount('children', 1)">
-                                <i class="bi bi-plus"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Rooms -->
-                    <div class="guest-counter">
-                        <div class="guest-label">
-                            <strong>ห้อง</strong>
-                        </div>
-                        <div class="counter-controls">
-                            <button type="button" class="btn-counter" onclick="changeCount('rooms', -1)">
-                                <i class="bi bi-dash"></i>
-                            </button>
-                            <span id="roomsCount" class="counter-value">1</span>
-                            <button type="button" class="btn-counter" onclick="changeCount('rooms', 1)">
-                                <i class="bi bi-plus"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary w-100" onclick="updateGuestsDisplay()" data-bs-dismiss="modal">
-                        ยืนยัน
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <script>
     // Category Filter System - Define early so onclick handlers can use it
@@ -1733,118 +682,454 @@ if ($_GET) {
     });
     </script>
 
-    <?php if ($hasSearch): ?>
-    <!-- SEARCH RESULTS SECTION -->
-    <section class="py-5">
-        <div class="container position-relative">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="section-title mb-0">ผลการค้นหาอพาร์ตเม้นในกรุงเทพฯ</h2>
-                <span class="text-muted">พบ <?php echo count($searchResults); ?> ห้อง</span>
+    <!-- Hero Carousel - Featured Rooms -->
+    <section class="hero-rooms-carousel">
+        <div id="heroRoomsCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
+            <!-- Indicators -->
+            <div class="carousel-indicators">
+                <?php for ($i = 0; $i < min(5, count($popularApts)); $i++): ?>
+                <button type="button" data-bs-target="#heroRoomsCarousel" data-bs-slide-to="<?php echo $i; ?>" 
+                        <?php echo $i === 0 ? 'class="active" aria-current="true"' : ''; ?> 
+                        aria-label="Slide <?php echo $i + 1; ?>"></button>
+                <?php endfor; ?>
             </div>
 
-            <?php if (empty($searchResults)): ?>
-                <div class="alert alert-info">ไม่พบห้องที่ตรงกับเงื่อนไขการค้นหา</div>
-            <?php else: ?>
-                <div class="row g-4">
-                    <?php foreach ($searchResults as $apt): ?>
-                    <div class="col-lg-3 col-md-4 col-sm-6">
-                        <div class="card room-card h-100" data-apt-id="<?php echo (int) $apt['id']; ?>">
-                            <div class="position-relative">
-                                <img src="<?php echo htmlspecialchars($apt['thumbnail']); ?>"
-                                     class="card-img-top"
-                                     alt="<?php echo htmlspecialchars($apt['name']); ?>"
-                                     style="height: 200px; object-fit: cover;"
-                                     onerror="this.onerror=null; this.src='https://via.placeholder.com/400x300?text=No+Image'">
-                                <span class="badge position-absolute top-0 end-0 m-2" style="background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);">
-                                    <?php if (!empty($apt['price_monthly'])): ?>
-                                        ฿<?php echo number_format($apt['price_monthly']); ?>/เดือน
-                                    <?php elseif (!empty($apt['price_daily'])): ?>
-                                        ฿<?php echo number_format($apt['price_daily']); ?>/คืน
-                                    <?php endif; ?>
-                                </span>
-                            </div>
-                            <div class="card-body">
-                                <h5 class="card-title fw-bold" style="color: var(--dark-gray);">
-                                    <?php echo htmlspecialchars($apt['name']); ?>
-                                </h5>
-                                <p class="text-muted mb-2">
-                                    <i class="bi bi-geo-alt-fill" style="color: var(--medium-gray);"></i>
-                                    <?php echo htmlspecialchars(($apt['district'] ?? '') . ', ' . ($apt['province'] ?? '')); ?>
-                                </p>
-                                <p class="card-text text-truncate" style="color: var(--medium-gray);">
-                                    <?php echo htmlspecialchars($apt['description']); ?>
-                                </p>
-                                <!-- Amenities -->
-                                <?php if (!empty($apt['amenities'])): ?>
-                                <div class="mb-2">
-                                    <small class="text-muted d-flex flex-wrap gap-2">
-                                        <?php 
-                                        $amenityIcons = [
-                                            'WiFi' => 'bi-wifi',
-                                            'ที่จอดรถ' => 'bi-car-front-fill',
-                                            'ฟิตเนส' => 'bi-heart-pulse-fill',
-                                            'สระว่ายน้ำ' => 'bi-water',
-                                            'วิวแม่น้ำ' => 'bi-water',
-                                            'ครัว' => 'bi-cup-hot-fill',
-                                            'กล้องวงจรปิด' => 'bi-camera-video-fill',
-                                            'รูมเซอร์วิส' => 'bi-bell-fill',
-                                            'ห้องประชุม' => 'bi-briefcase-fill',
-                                            'สวนส่วนกลาง' => 'bi-tree-fill',
-                                            'Co-working space' => 'bi-laptop',
-                                            'คาเฟ่' => 'bi-cup-straw',
-                                            'เลี้ยงสัตว์ได้' => 'bi-heart-fill',
-                                        ];
-                                        $displayAmenities = array_slice($apt['amenities'], 0, 4);
-                                        foreach ($displayAmenities as $amenity):
-                                            $icon = $amenityIcons[$amenity] ?? 'bi-check-circle-fill';
-                                        ?>
-                                            <span><i class="<?php echo $icon; ?>" style="color: var(--primary-blue);"></i> <?php echo htmlspecialchars($amenity); ?></span>
-                                        <?php endforeach; ?>
-                                    </small>
-                                </div>
-                                <?php endif; ?>
-                                <div class="d-flex justify-content-between align-items-center mt-2">
-                                    <small class="text-muted">
-                                        <i class="bi bi-star-fill text-warning"></i>
-                                        <?php echo number_format($apt['rating'], 1); ?> ·
-                                        <i class="bi bi-eye ms-1"></i> <?php echo (int) $apt['views']; ?>
-                                    </small>
-                                    <a href="mock-room-detail.php?id=<?php echo (int) $apt['id']; ?>" class="btn btn-sm btn-primary">
-                                        ดูรายละเอียด
-                                    </a>
-                                </div>
-                                <div class="form-check mt-2">
-                                    <input class="form-check-input compare-checkbox" type="checkbox" value="<?php echo (int) $apt['id']; ?>" id="compare_<?php echo (int) $apt['id']; ?>">
-                                    <label class="form-check-label small" for="compare_<?php echo (int) $apt['id']; ?>">
-                                        เปรียบเทียบห้องนี้
-                                    </label>
+            <!-- Slides -->
+            <div class="carousel-inner">
+                <?php 
+                $featuredRooms = array_slice($popularApts, 0, 5);
+                foreach ($featuredRooms as $index => $room): 
+                ?>
+                <div class="carousel-item <?php echo $index === 0 ? 'active' : ''; ?>">
+                    <div class="hero-room-slide">
+                        <!-- Background Image -->
+                        <div class="hero-room-bg" style="background-image: url('<?php echo htmlspecialchars($room['thumbnail']); ?>');"></div>
+                        <div class="hero-room-overlay"></div>
+                        
+                        <!-- Content -->
+                        <div class="container">
+                            <div class="row align-items-center" style="min-height: 500px;">
+                                <div class="col-lg-6">
+                                    <div class="hero-room-content">
+                                        <span class="hero-room-badge">
+                                            <i class="bi bi-star-fill"></i>
+                                            <?php echo number_format($room['rating'], 1); ?> · แนะนำ
+                                        </span>
+                                        <h1 class="hero-room-title">
+                                            <?php echo htmlspecialchars($room['name']); ?>
+                                        </h1>
+                                        <p class="hero-room-location">
+                                            <i class="bi bi-geo-alt-fill"></i>
+                                            <?php echo htmlspecialchars(($room['district'] ?? '') . ', ' . ($room['province'] ?? '')); ?>
+                                        </p>
+                                        <p class="hero-room-description">
+                                            <?php echo htmlspecialchars($room['description']); ?>
+                                        </p>
+                                        
+                                        <!-- Amenities -->
+                                        <?php if (!empty($room['amenities'])): ?>
+                                        <div class="hero-room-amenities">
+                                            <?php 
+                                            $amenityIcons = [
+                                                'WiFi' => 'bi-wifi',
+                                                'ที่จอดรถ' => 'bi-car-front-fill',
+                                                'ฟิตเนส' => 'bi-heart-pulse-fill',
+                                                'สระว่ายน้ำ' => 'bi-water',
+                                                'แอร์' => 'bi-snow',
+                                                'เครื่องปรับอากาศ' => 'bi-snow',
+                                            ];
+                                            $displayAmenities = array_slice($room['amenities'], 0, 4);
+                                            foreach ($displayAmenities as $amenity):
+                                                $icon = $amenityIcons[$amenity] ?? 'bi-check-circle-fill';
+                                            ?>
+                                            <span class="amenity-item">
+                                                <i class="<?php echo $icon; ?>"></i>
+                                                <?php echo htmlspecialchars($amenity); ?>
+                                            </span>
+                                            <?php endforeach; ?>
+                                        </div>
+                                        <?php endif; ?>
+                                        
+                                        <!-- Price & CTA -->
+                                        <div class="hero-room-footer">
+                                            <div class="hero-room-price">
+                                                <?php if (!empty($room['price_monthly'])): ?>
+                                                    <span class="price-amount">฿<?php echo number_format($room['price_monthly']); ?></span>
+                                                    <span class="price-period">/เดือน</span>
+                                                <?php elseif (!empty($room['price_daily'])): ?>
+                                                    <span class="price-amount">฿<?php echo number_format($room['price_daily']); ?></span>
+                                                    <span class="price-period">/คืน</span>
+                                                <?php endif; ?>
+                                            </div>
+                                            <a href="mock-room-detail.php?id=<?php echo (int) $room['id']; ?>" class="btn-hero-view">
+                                                <i class="bi bi-eye me-2"></i>
+                                                ดูรายละเอียด
+                                            </a>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <?php endforeach; ?>
                 </div>
-            <?php endif; ?>
-            <!-- Compare Bar -->
-            <div id="compareBar" class="card shadow-lg border-0 px-3 py-2 d-none" style="position:fixed; left:50%; transform:translateX(-50%); bottom:20px; z-index:1040; max-width:800px;">
-                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                    <div class="d-flex align-items-center flex-wrap gap-2" id="compareSelectedList">
-                        <!-- filled by JS -->
-                    </div>
-                    <div class="d-flex align-items-center gap-2 ms-auto">
-                        <small class="text-muted" id="compareCountLabel"></small>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" id="clearCompareBtn">
-                            ล้างการเลือก
-                        </button>
-                        <button type="button" class="btn btn-primary btn-sm" id="openCompareModalBtn">
-                            <i class="bi bi-columns-gap"></i> เปรียบเทียบ
-                        </button>
-                    </div>
-                </div>
+                <?php endforeach; ?>
+            </div>
+
+            <!-- Controls -->
+            <button class="carousel-control-prev" type="button" data-bs-target="#heroRoomsCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#heroRoomsCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
+        </div>
+    </section>
+
+    <style>
+        /* Hero Rooms Carousel Styles */
+        .hero-rooms-carousel {
+            position: relative;
+            margin-bottom: 60px;
+        }
+
+        .hero-room-slide {
+            position: relative;
+            min-height: 500px;
+            display: flex;
+            align-items: center;
+        }
+
+        .hero-room-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            filter: brightness(0.6);
+        }
+
+        .hero-room-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                to right,
+                rgba(0, 0, 0, 0.8) 0%,
+                rgba(0, 0, 0, 0.6) 50%,
+                rgba(0, 0, 0, 0.3) 100%
+            );
+        }
+
+        .hero-room-content {
+            position: relative;
+            z-index: 10;
+            color: white;
+            padding: 40px 0;
+        }
+
+        .hero-room-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .hero-room-badge i {
+            color: #fbbf24;
+        }
+
+        .hero-room-title {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            line-height: 1.2;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .hero-room-location {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+
+        .hero-room-location i {
+            color: #3b82f6;
+        }
+
+        .hero-room-description {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            opacity: 0.95;
+            max-width: 600px;
+        }
+
+        .hero-room-amenities {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .amenity-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 10px 16px;
+            border-radius: 25px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .amenity-item i {
+            font-size: 1.1rem;
+            color: #60a5fa;
+        }
+
+        .hero-room-footer {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            margin-top: 35px;
+        }
+
+        .hero-room-price {
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+        }
+
+        .price-amount {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #60a5fa;
+            text-shadow: 0 2px 10px rgba(96, 165, 250, 0.5);
+        }
+
+        .price-period {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .btn-hero-view {
+            display: inline-flex;
+            align-items: center;
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 1.05rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-hero-view:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.6);
+            color: white;
+        }
+
+        /* Carousel Controls */
+        .hero-rooms-carousel .carousel-control-prev,
+        .hero-rooms-carousel .carousel-control-next {
+            width: 60px;
+            height: 60px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 1;
+            z-index: 15;
+        }
+
+        .hero-rooms-carousel .carousel-control-prev {
+            left: 30px;
+        }
+
+        .hero-rooms-carousel .carousel-control-next {
+            right: 30px;
+        }
+
+        .hero-rooms-carousel .carousel-control-prev:hover,
+        .hero-rooms-carousel .carousel-control-next:hover {
+            opacity: 1;
+        }
+
+        .hero-rooms-carousel .carousel-control-prev-icon,
+        .hero-rooms-carousel .carousel-control-next-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            background-image: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        /* Custom Arrow Icons */
+        .hero-rooms-carousel .carousel-control-prev-icon::before,
+        .hero-rooms-carousel .carousel-control-next-icon::before {
+            content: '';
+            width: 16px;
+            height: 16px;
+            border-left: 3px solid white;
+            border-bottom: 3px solid white;
+            position: absolute;
+            transition: all 0.3s ease;
+        }
+
+        .hero-rooms-carousel .carousel-control-prev-icon::before {
+            transform: rotate(45deg);
+            left: 24px;
+        }
+
+        .hero-rooms-carousel .carousel-control-next-icon::before {
+            transform: rotate(-135deg);
+            right: 24px;
+        }
+
+        .hero-rooms-carousel .carousel-control-prev:hover .carousel-control-prev-icon,
+        .hero-rooms-carousel .carousel-control-next:hover .carousel-control-next-icon {
+            background: rgba(255, 255, 255, 0.35);
+            border-color: rgba(255, 255, 255, 0.6);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            transform: scale(1.1);
+        }
+
+        .hero-rooms-carousel .carousel-control-prev:hover .carousel-control-prev-icon::before,
+        .hero-rooms-carousel .carousel-control-next:hover .carousel-control-next-icon::before {
+            border-color: #ffffff;
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
+        }
+
+        .hero-rooms-carousel .carousel-indicators {
+            bottom: 30px;
+        }
+
+        .hero-rooms-carousel .carousel-indicators [data-bs-target] {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            margin: 0 6px;
+        }
+
+        .hero-rooms-carousel .carousel-indicators .active {
+            width: 40px;
+            border-radius: 6px;
+            background-color: white;
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .hero-room-title {
+                font-size: 2.2rem;
+            }
+
+            .hero-room-description {
+                font-size: 1rem;
+            }
+
+            .price-amount {
+                font-size: 2rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero-room-slide {
+                min-height: 400px;
+            }
+
+            .hero-room-title {
+                font-size: 1.8rem;
+            }
+
+            .hero-room-footer {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .btn-hero-view {
+                width: 100%;
+                justify-content: center;
+            }
+
+            /* Mobile carousel controls */
+            .hero-rooms-carousel .carousel-control-prev,
+            .hero-rooms-carousel .carousel-control-next {
+                width: 50px;
+                height: 50px;
+            }
+
+            .hero-rooms-carousel .carousel-control-prev {
+                left: 15px;
+            }
+
+            .hero-rooms-carousel .carousel-control-next {
+                right: 15px;
+            }
+
+            .hero-rooms-carousel .carousel-control-prev-icon,
+            .hero-rooms-carousel .carousel-control-next-icon {
+                width: 50px;
+                height: 50px;
+            }
+
+            .hero-rooms-carousel .carousel-control-prev-icon::before,
+            .hero-rooms-carousel .carousel-control-next-icon::before {
+                width: 12px;
+                height: 12px;
+                border-width: 2.5px;
+            }
+
+            .hero-rooms-carousel .carousel-control-prev-icon::before {
+                left: 20px;
+            }
+
+            .hero-rooms-carousel .carousel-control-next-icon::before {
+                right: 20px;
+            }
+        }
+    </style>
+
+    <!-- Rental Type Tabs Section -->
+    <section class="rental-tabs-section">
+        <div class="container">
+            <div class="rental-tabs-wrapper">
+                <button class="rental-tab active" data-rental-type="monthly" onclick="switchRentalTab('monthly')">
+                    <i class="bi bi-calendar-month"></i>
+                    <span>รายเดือน</span>
+                </button>
+                <button class="rental-tab" data-rental-type="daily" onclick="switchRentalTab('daily')">
+                    <i class="bi bi-calendar-day"></i>
+                    <span>รายวัน</span>
+                </button>
             </div>
         </div>
     </section>
-    <?php endif; ?>
 
     <!-- Category Filter Buttons Section -->
     <section class="category-filter-section">
@@ -1856,13 +1141,17 @@ if ($_GET) {
             
             <div class="category-filter-scroll-wrapper" id="categoryScrollWrapper">
                 <div class="category-filter-wrapper" id="categoryFilterWrapper">
-                    <button class="category-filter-btn" data-category="near_school" onclick="filterByCategory('near_school')">
-                        <i class="bi bi-book-fill" style="color: #f59e0b;"></i>
-                        ที่พักใกล้โรงเรียน
-                    </button>
                     <button class="category-filter-btn" data-category="near_transit" onclick="filterByCategory('near_transit')">
                         <i class="bi bi-train-front-fill" style="color: #10b981;"></i>
                         ที่พักติด BTS/MRT
+                    </button>
+                    <button class="category-filter-btn" data-category="near_university" onclick="filterByCategory('near_university')">
+                        <i class="bi bi-mortarboard-fill" style="color: #3b82f6;"></i>
+                        ใกล้มหาวิทยาลัย
+                    </button>
+                    <button class="category-filter-btn" data-category="near_school" onclick="filterByCategory('near_school')">
+                        <i class="bi bi-book-fill" style="color: #f59e0b;"></i>
+                        ที่พักใกล้โรงเรียน
                     </button>
                     <button class="category-filter-btn" data-category="luxury" onclick="filterByCategory('luxury')">
                         <i class="bi bi-gem" style="color: #8b5cf6;"></i>
@@ -1871,10 +1160,6 @@ if ($_GET) {
                     <button class="category-filter-btn" data-category="pet_friendly" onclick="filterByCategory('pet_friendly')">
                         <i class="bi bi-heart-fill" style="color: #ec4899;"></i>
                         เลี้ยงสัตว์ได้
-                    </button>
-                    <button class="category-filter-btn" data-category="near_university" onclick="filterByCategory('near_university')">
-                        <i class="bi bi-mortarboard-fill" style="color: #3b82f6;"></i>
-                        ใกล้มหาวิทยาลัย
                     </button>
                     <button class="category-filter-btn" data-category="near_hospital" onclick="filterByCategory('near_hospital')">
                         <i class="bi bi-hospital-fill" style="color: #ef4444;"></i>
@@ -1893,254 +1178,478 @@ if ($_GET) {
         </div>
     </section>
 
-    <!-- SECTION 1: Popular apartments & condos -->
-    <section class="py-5">
-        <div class="container">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="section-title mb-0">อพาร์ตเม้น &amp; คอนโด ยอดฮิตในกรุงเทพฯ</h2>
-                <a href="room-search.php" class="btn btn-outline-primary btn-sm">
-                    ดูห้องพักทั้งหมด <i class="bi bi-arrow-right ms-1"></i>
-                </a>
-            </div>
-            <div class="row g-4">
-                <?php foreach ($popularApts as $apt): ?>
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <div class="card room-card h-100">
-                        <div class="position-relative">
-                            <img src="<?php echo htmlspecialchars($apt['thumbnail']); ?>"
-                                 class="card-img-top"
-                                 alt="<?php echo htmlspecialchars($apt['name']); ?>"
-                                 style="height: 200px; object-fit: cover;"
-                                 onerror="this.onerror=null; this.src='https://via.placeholder.com/400x300?text=No+Image'">
-                            <?php if (!empty($apt['is_popular'])): ?>
-                            <span class="badge position-absolute top-0 start-0 m-2" style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);">ยอดฮิต</span>
-                            <?php endif; ?>
-                            <span class="badge position-absolute top-0 end-0 m-2" style="background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);">
-                                <?php if (!empty($apt['price_monthly'])): ?>
+    <!-- Tab Content: Monthly Rentals -->
+    <div id="monthly-content" class="tab-content-section active">
+        <!-- Monthly: Featured Apartments -->
+        <section class="py-5">
+            <div class="container">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="section-title mb-0">
+                        <i class="bi bi-star-fill text-warning me-2"></i>
+                        อพาร์ตเม้นรายเดือนแนะนำ
+                    </h2>
+                    <a href="room-search.php?rental_type=monthly" class="btn btn-outline-primary btn-sm">
+                        ดูห้องทั้งหมด <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+                <div class="row g-4">
+                    <?php 
+                    $monthlyFeatured = array_filter($popularApts, function($apt) {
+                        return in_array('monthly', $apt['rental_type'] ?? []);
+                    });
+                    $monthlyFeatured = array_slice($monthlyFeatured, 0, 4);
+                    foreach ($monthlyFeatured as $apt): 
+                    ?>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card room-card h-100">
+                            <div class="position-relative">
+                                <img src="<?php echo htmlspecialchars($apt['thumbnail']); ?>"
+                                     class="card-img-top"
+                                     alt="<?php echo htmlspecialchars($apt['name']); ?>"
+                                     style="height: 220px; object-fit: cover;">
+                                <span class="badge position-absolute top-0 end-0 m-2" style="background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);">
                                     ฿<?php echo number_format($apt['price_monthly']); ?>/เดือน
-                                <?php elseif (!empty($apt['price_daily'])): ?>
-                                    ฿<?php echo number_format($apt['price_daily']); ?>/คืน
+                                </span>
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title fw-bold"><?php echo htmlspecialchars($apt['name']); ?></h5>
+                                <p class="text-muted mb-2">
+                                    <i class="bi bi-geo-alt-fill"></i>
+                                    <?php echo htmlspecialchars(($apt['district'] ?? '') . ', ' . ($apt['province'] ?? '')); ?>
+                                </p>
+                                <!-- Amenities -->
+                                <?php if (!empty($apt['amenities']) || !empty($apt['max_occupancy'])): ?>
+                                <div class="mb-2">
+                                    <small class="text-muted d-flex flex-wrap gap-2">
+                                        <?php if (!empty($apt['max_occupancy'])): ?>
+                                            <span><i class="bi bi-people-fill" style="color: var(--primary-blue);"></i> อยู่ได้ <?php echo (int)$apt['max_occupancy']; ?> คน</span>
+                                        <?php endif; ?>
+                                        <?php 
+                                        if (!empty($apt['amenities'])):
+                                            $amenityIcons = [
+                                                'WiFi' => 'bi-wifi',
+                                                'ที่จอดรถ' => 'bi-car-front-fill',
+                                                'ฟิตเนส' => 'bi-heart-pulse-fill',
+                                                'สระว่ายน้ำ' => 'bi-water',
+                                                'วิวแม่น้ำ' => 'bi-water',
+                                                'ครัว' => 'bi-cup-hot-fill',
+                                                'แอร์' => 'bi-snow',
+                                            ];
+                                            $displayAmenities = array_slice($apt['amenities'], 0, 2);
+                                            foreach ($displayAmenities as $amenity):
+                                                $icon = $amenityIcons[$amenity] ?? 'bi-check-circle-fill';
+                                            ?>
+                                                <span><i class="<?php echo $icon; ?>" style="color: var(--primary-blue);"></i> <?php echo htmlspecialchars($amenity); ?></span>
+                                            <?php endforeach; 
+                                        endif; ?>
+                                    </small>
+                                </div>
                                 <?php endif; ?>
-                            </span>
-                        </div>
-                        <div class="card-body">
-                            <h5 class="card-title fw-bold" style="color: var(--dark-gray);">
-                                <?php echo htmlspecialchars($apt['name']); ?>
-                            </h5>
-                            <p class="text-muted mb-2">
-                                <i class="bi bi-geo-alt-fill" style="color: var(--medium-gray);"></i>
-                                <?php echo htmlspecialchars($apt['district'] . ', ' . $apt['province']); ?>
-                            </p>
-                            <p class="card-text text-truncate" style="color: var(--medium-gray);">
-                                <?php echo htmlspecialchars($apt['description']); ?>
-                            </p>
-                            <!-- Amenities -->
-                            <?php if (!empty($apt['amenities'])): ?>
-                            <div class="mb-2">
-                                <small class="text-muted d-flex flex-wrap gap-2">
-                                    <?php 
-                                    $amenityIcons = [
-                                        'WiFi' => 'bi-wifi',
-                                        'ที่จอดรถ' => 'bi-car-front-fill',
-                                        'ฟิตเนส' => 'bi-heart-pulse-fill',
-                                        'สระว่ายน้ำ' => 'bi-water',
-                                        'วิวแม่น้ำ' => 'bi-water',
-                                        'ครัว' => 'bi-cup-hot-fill',
-                                        'กล้องวงจรปิด' => 'bi-camera-video-fill',
-                                        'รูมเซอร์วิส' => 'bi-bell-fill',
-                                        'ห้องประชุม' => 'bi-briefcase-fill',
-                                        'สวนส่วนกลาง' => 'bi-tree-fill',
-                                        'Co-working space' => 'bi-laptop',
-                                        'คาเฟ่' => 'bi-cup-straw',
-                                        'เลี้ยงสัตว์ได้' => 'bi-heart-fill',
-                                    ];
-                                    $displayAmenities = array_slice($apt['amenities'], 0, 4);
-                                    foreach ($displayAmenities as $amenity):
-                                        $icon = $amenityIcons[$amenity] ?? 'bi-check-circle-fill';
-                                    ?>
-                                        <span><i class="<?php echo $icon; ?>" style="color: var(--primary-blue);"></i> <?php echo htmlspecialchars($amenity); ?></span>
-                                    <?php endforeach; ?>
-                                </small>
-                            </div>
-                            <?php endif; ?>
-                            <div class="d-flex justify-content-between align-items-center mt-3">
-                                <small class="text-muted">
-                                    <i class="bi bi-star-fill text-warning"></i>
-                                    <?php echo number_format($apt['rating'], 1); ?> ·
-                                    <i class="bi bi-eye ms-1"></i> <?php echo (int) $apt['views']; ?>
-                                </small>
-                                <a href="mock-room-detail.php?id=<?php echo (int) $apt['id']; ?>" class="btn btn-sm btn-primary">
-                                    ดูรายละเอียด
-                                </a>
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <small class="text-muted">
+                                        <i class="bi bi-star-fill text-warning"></i>
+                                        <?php echo number_format($apt['rating'], 1); ?>
+                                    </small>
+                                    <a href="mock-room-detail.php?id=<?php echo (int) $apt['id']; ?>" class="btn btn-sm btn-primary">
+                                        ดูรายละเอียด
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
+                    <?php endforeach; ?>
                 </div>
-                <?php endforeach; ?>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- SECTION 2: Recommended monthly apartments -->
-    <section class="py-5 bg-section-light">
-        <div class="container">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="section-title mb-0">อพาร์ตเม้นรายเดือน แนะนำ</h2>
-                <a href="room-search.php?rental_type=monthly" class="btn btn-outline-primary btn-sm">
-                    ดูห้องพักรายเดือนทั้งหมด <i class="bi bi-arrow-right ms-1"></i>
-                </a>
-            </div>
-            <div class="row g-4">
-                <?php foreach ($monthlyApts as $apt): ?>
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <div class="card room-card h-100">
-                        <div class="position-relative">
-                            <img src="<?php echo htmlspecialchars($apt['thumbnail']); ?>"
-                                 class="card-img-top"
-                                 alt="<?php echo htmlspecialchars($apt['name']); ?>"
-                                 style="height: 200px; object-fit: cover;"
-                                 onerror="this.onerror=null; this.src='https://via.placeholder.com/400x300?text=No+Image'">
-                            <span class="badge position-absolute top-0 end-0 m-2" style="background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);">
-                                ฿<?php echo number_format($apt['price_monthly']); ?>/เดือน
-                            </span>
-                        </div>
-                        <div class="card-body">
-                            <h5 class="card-title fw-bold" style="color: var(--dark-gray);">
-                                <?php echo htmlspecialchars($apt['name']); ?>
-                            </h5>
-                            <p class="text-muted mb-2">
-                                <i class="bi bi-geo-alt-fill" style="color: var(--medium-gray);"></i>
-                                <?php echo htmlspecialchars($apt['district'] . ', ' . $apt['province']); ?>
-                            </p>
-                            <p class="card-text text-truncate" style="color: var(--medium-gray);">
-                                <?php echo htmlspecialchars($apt['description']); ?>
-                            </p>
-                            <!-- Amenities -->
-                            <?php if (!empty($apt['amenities'])): ?>
-                            <div class="mb-2">
-                                <small class="text-muted d-flex flex-wrap gap-2">
-                                    <?php 
-                                    $amenityIcons = [
-                                        'WiFi' => 'bi-wifi',
-                                        'ที่จอดรถ' => 'bi-car-front-fill',
-                                        'ฟิตเนส' => 'bi-heart-pulse-fill',
-                                        'สระว่ายน้ำ' => 'bi-water',
-                                        'วิวแม่น้ำ' => 'bi-water',
-                                        'ครัว' => 'bi-cup-hot-fill',
-                                        'กล้องวงจรปิด' => 'bi-camera-video-fill',
-                                        'รูมเซอร์วิส' => 'bi-bell-fill',
-                                        'ห้องประชุม' => 'bi-briefcase-fill',
-                                        'สวนส่วนกลาง' => 'bi-tree-fill',
-                                        'Co-working space' => 'bi-laptop',
-                                        'คาเฟ่' => 'bi-cup-straw',
-                                        'เลี้ยงสัตว์ได้' => 'bi-heart-fill',
-                                    ];
-                                    $displayAmenities = array_slice($apt['amenities'], 0, 4);
-                                    foreach ($displayAmenities as $amenity):
-                                        $icon = $amenityIcons[$amenity] ?? 'bi-check-circle-fill';
-                                    ?>
-                                        <span><i class="<?php echo $icon; ?>" style="color: var(--primary-blue);"></i> <?php echo htmlspecialchars($amenity); ?></span>
-                                    <?php endforeach; ?>
-                                </small>
+        <!-- Monthly: Luxury Apartments -->
+        <section class="py-5 bg-light">
+            <div class="container">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="section-title mb-0">
+                        <i class="bi bi-gem text-purple me-2" style="color: #8b5cf6;"></i>
+                        อพาร์ตเม้นรายเดือนหรู
+                    </h2>
+                    <a href="room-search.php?rental_type=monthly" class="btn btn-outline-primary btn-sm">
+                        ดูห้องทั้งหมด <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+                <div class="row g-4">
+                    <?php 
+                    $monthlyLuxury = array_filter(mock_get_all_apartments(), function($apt) {
+                        $isMonthly = in_array('monthly', $apt['rental_type'] ?? []);
+                        $isLuxury = ($apt['price_monthly'] ?? 0) >= 15000;
+                        return $isMonthly && $isLuxury;
+                    });
+                    $monthlyLuxury = array_slice($monthlyLuxury, 0, 4);
+                    foreach ($monthlyLuxury as $apt): 
+                    ?>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card room-card h-100">
+                            <div class="position-relative">
+                                <img src="<?php echo htmlspecialchars($apt['thumbnail']); ?>"
+                                     class="card-img-top"
+                                     alt="<?php echo htmlspecialchars($apt['name']); ?>"
+                                     style="height: 220px; object-fit: cover;">
+                                <span class="badge position-absolute top-0 start-0 m-2" style="background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);">
+                                    <i class="bi bi-gem"></i> Luxury
+                                </span>
+                                <span class="badge position-absolute top-0 end-0 m-2" style="background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);">
+                                    ฿<?php echo number_format($apt['price_monthly']); ?>/เดือน
+                                </span>
                             </div>
-                            <?php endif; ?>
-                            <div class="d-flex justify-content-between align-items-center mt-3">
-                                <small class="text-muted">
-                                    <i class="bi bi-star-fill text-warning"></i>
-                                    <?php echo number_format($apt['rating'], 1); ?>
-                                </small>
-                                <a href="mock-room-detail.php?id=<?php echo (int) $apt['id']; ?>" class="btn btn-sm btn-primary">
-                                    ดูรายละเอียด
-                                </a>
+                            <div class="card-body">
+                                <h5 class="card-title fw-bold"><?php echo htmlspecialchars($apt['name']); ?></h5>
+                                <p class="text-muted mb-2">
+                                    <i class="bi bi-geo-alt-fill"></i>
+                                    <?php echo htmlspecialchars(($apt['district'] ?? '') . ', ' . ($apt['province'] ?? '')); ?>
+                                </p>
+                                <!-- Amenities -->
+                                <?php if (!empty($apt['amenities'])): ?>
+                                <div class="mb-2">
+                                    <small class="text-muted d-flex flex-wrap gap-2">
+                                        <?php 
+                                        $amenityIcons = [
+                                            'WiFi' => 'bi-wifi',
+                                            'ที่จอดรถ' => 'bi-car-front-fill',
+                                            'ฟิตเนส' => 'bi-heart-pulse-fill',
+                                            'สระว่ายน้ำ' => 'bi-water',
+                                            'วิวแม่น้ำ' => 'bi-water',
+                                            'ครัว' => 'bi-cup-hot-fill',
+                                            'แอร์' => 'bi-snow',
+                                        ];
+                                        $displayAmenities = array_slice($apt['amenities'], 0, 3);
+                                        foreach ($displayAmenities as $amenity):
+                                            $icon = $amenityIcons[$amenity] ?? 'bi-check-circle-fill';
+                                        ?>
+                                            <span><i class="<?php echo $icon; ?>" style="color: var(--primary-blue);"></i> <?php echo htmlspecialchars($amenity); ?></span>
+                                        <?php endforeach; ?>
+                                    </small>
+                                </div>
+                                <?php endif; ?>
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <small class="text-muted">
+                                        <i class="bi bi-star-fill text-warning"></i>
+                                        <?php echo number_format($apt['rating'], 1); ?>
+                                    </small>
+                                    <a href="mock-room-detail.php?id=<?php echo (int) $apt['id']; ?>" class="btn btn-sm btn-primary">
+                                        ดูรายละเอียด
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
+                    <?php endforeach; ?>
                 </div>
-                <?php endforeach; ?>
             </div>
-        </div>
-    </section>
+        </section>
+    </div>
 
-    <!-- SECTION 3: Recommended daily apartments -->
-    <section class="py-5">
-        <div class="container">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="section-title mb-0">อพาร์ตเม้นรายวัน แนะนำ</h2>
-                <a href="room-search.php?rental_type=daily" class="btn btn-outline-primary btn-sm">
-                    ดูห้องพักรายวันทั้งหมด <i class="bi bi-arrow-right ms-1"></i>
-                </a>
-            </div>
-            <div class="row g-4">
-                <?php foreach ($dailyApts as $apt): ?>
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <div class="card room-card h-100">
-                        <div class="position-relative">
-                            <img src="<?php echo htmlspecialchars($apt['thumbnail']); ?>"
-                                 class="card-img-top"
-                                 alt="<?php echo htmlspecialchars($apt['name']); ?>"
-                                 style="height: 200px; object-fit: cover;"
-                                 onerror="this.onerror=null; this.src='https://via.placeholder.com/400x300?text=No+Image'">
-                            <span class="badge position-absolute top-0 end-0 m-2" style="background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);">
-                                ฿<?php echo number_format($apt['price_daily']); ?>/คืน
-                            </span>
-                        </div>
-                        <div class="card-body">
-                            <h5 class="card-title fw-bold" style="color: var(--dark-gray);">
-                                <?php echo htmlspecialchars($apt['name']); ?>
-                            </h5>
-                            <p class="text-muted mb-2">
-                                <i class="bi bi-geo-alt-fill" style="color: var(--medium-gray);"></i>
-                                <?php echo htmlspecialchars($apt['district'] . ', ' . $apt['province']); ?>
-                            </p>
-                            <p class="card-text text-truncate" style="color: var(--medium-gray);">
-                                <?php echo htmlspecialchars($apt['description']); ?>
-                            </p>
-                            <!-- Amenities -->
-                            <?php if (!empty($apt['amenities'])): ?>
-                            <div class="mb-2">
-                                <small class="text-muted d-flex flex-wrap gap-2">
-                                    <?php 
-                                    $amenityIcons = [
-                                        'WiFi' => 'bi-wifi',
-                                        'ที่จอดรถ' => 'bi-car-front-fill',
-                                        'ฟิตเนส' => 'bi-heart-pulse-fill',
-                                        'สระว่ายน้ำ' => 'bi-water',
-                                        'วิวแม่น้ำ' => 'bi-water',
-                                        'ครัว' => 'bi-cup-hot-fill',
-                                        'กล้องวงจรปิด' => 'bi-camera-video-fill',
-                                        'รูมเซอร์วิส' => 'bi-bell-fill',
-                                        'ห้องประชุม' => 'bi-briefcase-fill',
-                                        'สวนส่วนกลาง' => 'bi-tree-fill',
-                                        'Co-working space' => 'bi-laptop',
-                                        'คาเฟ่' => 'bi-cup-straw',
-                                        'เลี้ยงสัตว์ได้' => 'bi-heart-fill',
-                                    ];
-                                    $displayAmenities = array_slice($apt['amenities'], 0, 4);
-                                    foreach ($displayAmenities as $amenity):
-                                        $icon = $amenityIcons[$amenity] ?? 'bi-check-circle-fill';
-                                    ?>
-                                        <span><i class="<?php echo $icon; ?>" style="color: var(--primary-blue);"></i> <?php echo htmlspecialchars($amenity); ?></span>
-                                    <?php endforeach; ?>
-                                </small>
+    <!-- Tab Content: Daily Rentals -->
+    <div id="daily-content" class="tab-content-section" style="display: none;">
+        <!-- Daily: Featured Apartments -->
+        <section class="py-5">
+            <div class="container">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="section-title mb-0">
+                        <i class="bi bi-star-fill text-warning me-2"></i>
+                        อพาร์ตเม้นรายวันแนะนำ
+                    </h2>
+                    <a href="room-search.php?rental_type=daily" class="btn btn-outline-primary btn-sm">
+                        ดูห้องทั้งหมด <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+                <div class="row g-4">
+                    <?php 
+                    $dailyFeatured = array_filter($dailyApts, function($apt) {
+                        return in_array('daily', $apt['rental_type'] ?? []);
+                    });
+                    $dailyFeatured = array_slice($dailyFeatured, 0, 4);
+                    foreach ($dailyFeatured as $apt): 
+                    ?>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card room-card h-100">
+                            <div class="position-relative">
+                                <img src="<?php echo htmlspecialchars($apt['thumbnail']); ?>"
+                                     class="card-img-top"
+                                     alt="<?php echo htmlspecialchars($apt['name']); ?>"
+                                     style="height: 220px; object-fit: cover;">
+                                <span class="badge position-absolute top-0 end-0 m-2" style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);">
+                                    ฿<?php echo number_format($apt['price_daily']); ?>/คืน
+                                </span>
                             </div>
-                            <?php endif; ?>
-                            <div class="d-flex justify-content-between align-items-center mt-3">
-                                <small class="text-muted">
-                                    <i class="bi bi-star-fill text-warning"></i>
-                                    <?php echo number_format($apt['rating'], 1); ?>
-                                </small>
-                                <a href="mock-room-detail.php?id=<?php echo (int) $apt['id']; ?>" class="btn btn-sm btn-primary">
-                                    ดูรายละเอียด
-                                </a>
+                            <div class="card-body">
+                                <h5 class="card-title fw-bold"><?php echo htmlspecialchars($apt['name']); ?></h5>
+                                <p class="text-muted mb-2">
+                                    <i class="bi bi-geo-alt-fill"></i>
+                                    <?php echo htmlspecialchars(($apt['district'] ?? '') . ', ' . ($apt['province'] ?? '')); ?>
+                                </p>
+                                <!-- Amenities -->
+                                <?php if (!empty($apt['amenities']) || !empty($apt['max_occupancy'])): ?>
+                                <div class="mb-2">
+                                    <small class="text-muted d-flex flex-wrap gap-2">
+                                        <?php if (!empty($apt['max_occupancy'])): ?>
+                                            <span><i class="bi bi-people-fill" style="color: var(--primary-blue);"></i> อยู่ได้ <?php echo (int)$apt['max_occupancy']; ?> คน</span>
+                                        <?php endif; ?>
+                                        <?php 
+                                        if (!empty($apt['amenities'])):
+                                            $amenityIcons = [
+                                                'WiFi' => 'bi-wifi',
+                                                'ที่จอดรถ' => 'bi-car-front-fill',
+                                                'ฟิตเนส' => 'bi-heart-pulse-fill',
+                                                'สระว่ายน้ำ' => 'bi-water',
+                                                'วิวแม่น้ำ' => 'bi-water',
+                                                'ครัว' => 'bi-cup-hot-fill',
+                                                'แอร์' => 'bi-snow',
+                                            ];
+                                            $displayAmenities = array_slice($apt['amenities'], 0, 2);
+                                            foreach ($displayAmenities as $amenity):
+                                                $icon = $amenityIcons[$amenity] ?? 'bi-check-circle-fill';
+                                            ?>
+                                                <span><i class="<?php echo $icon; ?>" style="color: var(--primary-blue);"></i> <?php echo htmlspecialchars($amenity); ?></span>
+                                            <?php endforeach; 
+                                        endif; ?>
+                                    </small>
+                                </div>
+                                <?php endif; ?>
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <small class="text-muted">
+                                        <i class="bi bi-star-fill text-warning"></i>
+                                        <?php echo number_format($apt['rating'], 1); ?>
+                                    </small>
+                                    <a href="mock-room-detail.php?id=<?php echo (int) $apt['id']; ?>" class="btn btn-sm btn-primary">
+                                        ดูรายละเอียด
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
+                    <?php endforeach; ?>
                 </div>
-                <?php endforeach; ?>
             </div>
-        </div>
-    </section>
+        </section>
 
+        <!-- Daily: Luxury Apartments -->
+        <section class="py-5 bg-light">
+            <div class="container">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="section-title mb-0">
+                        <i class="bi bi-gem text-purple me-2" style="color: #8b5cf6;"></i>
+                        อพาร์ตเม้นรายวันหรู
+                    </h2>
+                    <a href="room-search.php?rental_type=daily" class="btn btn-outline-primary btn-sm">
+                        ดูห้องทั้งหมด <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+                <div class="row g-4">
+                    <?php 
+                    $dailyLuxury = array_filter(mock_get_all_apartments(), function($apt) {
+                        $isDaily = in_array('daily', $apt['rental_type'] ?? []);
+                        $isLuxury = ($apt['price_daily'] ?? 0) >= 1500;
+                        return $isDaily && $isLuxury;
+                    });
+                    $dailyLuxury = array_slice($dailyLuxury, 0, 4);
+                    foreach ($dailyLuxury as $apt): 
+                    ?>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card room-card h-100">
+                            <div class="position-relative">
+                                <img src="<?php echo htmlspecialchars($apt['thumbnail']); ?>"
+                                     class="card-img-top"
+                                     alt="<?php echo htmlspecialchars($apt['name']); ?>"
+                                     style="height: 220px; object-fit: cover;">
+                                <span class="badge position-absolute top-0 start-0 m-2" style="background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);">
+                                    <i class="bi bi-gem"></i> Luxury
+                                </span>
+                                <span class="badge position-absolute top-0 end-0 m-2" style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);">
+                                    ฿<?php echo number_format($apt['price_daily']); ?>/คืน
+                                </span>
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title fw-bold"><?php echo htmlspecialchars($apt['name']); ?></h5>
+                                <p class="text-muted mb-2">
+                                    <i class="bi bi-geo-alt-fill"></i>
+                                    <?php echo htmlspecialchars(($apt['district'] ?? '') . ', ' . ($apt['province'] ?? '')); ?>
+                                </p>
+                                <!-- Amenities -->
+                                <?php if (!empty($apt['amenities']) || !empty($apt['max_occupancy'])): ?>
+                                <div class="mb-2">
+                                    <small class="text-muted d-flex flex-wrap gap-2">
+                                        <?php if (!empty($apt['max_occupancy'])): ?>
+                                            <span><i class="bi bi-people-fill" style="color: var(--primary-blue);"></i> อยู่ได้ <?php echo (int)$apt['max_occupancy']; ?> คน</span>
+                                        <?php endif; ?>
+                                        <?php 
+                                        if (!empty($apt['amenities'])):
+                                            $amenityIcons = [
+                                                'WiFi' => 'bi-wifi',
+                                                'ที่จอดรถ' => 'bi-car-front-fill',
+                                                'ฟิตเนส' => 'bi-heart-pulse-fill',
+                                                'สระว่ายน้ำ' => 'bi-water',
+                                                'วิวแม่น้ำ' => 'bi-water',
+                                                'ครัว' => 'bi-cup-hot-fill',
+                                                'แอร์' => 'bi-snow',
+                                            ];
+                                            $displayAmenities = array_slice($apt['amenities'], 0, 2);
+                                            foreach ($displayAmenities as $amenity):
+                                                $icon = $amenityIcons[$amenity] ?? 'bi-check-circle-fill';
+                                            ?>
+                                                <span><i class="<?php echo $icon; ?>" style="color: var(--primary-blue);"></i> <?php echo htmlspecialchars($amenity); ?></span>
+                                            <?php endforeach; 
+                                        endif; ?>
+                                    </small>
+                                </div>
+                                <?php endif; ?>
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <small class="text-muted">
+                                        <i class="bi bi-star-fill text-warning"></i>
+                                        <?php echo number_format($apt['rating'], 1); ?>
+                                    </small>
+                                    <a href="mock-room-detail.php?id=<?php echo (int) $apt['id']; ?>" class="btn btn-sm btn-primary">
+                                        ดูรายละเอียด
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <style>
+        /* Rental Tabs Styles */
+        .rental-tabs-section {
+            padding: 30px 0;
+            background: linear-gradient(to bottom, #ffffff 0%, #f8fafc 100%);
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .rental-tabs-wrapper {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .rental-tab {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 32px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 50px;
+            color: var(--dark-gray);
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .rental-tab::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+            transition: left 0.3s ease;
+            z-index: 0;
+        }
+
+        .rental-tab i,
+        .rental-tab span {
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s ease;
+        }
+
+        .rental-tab i {
+            font-size: 1.3rem;
+            color: var(--primary-color);
+        }
+
+        .rental-tab:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.25);
+        }
+
+        .rental-tab:hover i {
+            transform: scale(1.15) rotate(5deg);
+        }
+
+        .rental-tab.active {
+            background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+            border-color: #2563eb;
+            color: white;
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.35);
+            transform: translateY(-3px);
+        }
+
+        .rental-tab.active::before {
+            left: 0;
+        }
+
+        .rental-tab.active i {
+            color: white;
+            animation: pulse-icon 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-icon {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .rental-tabs-wrapper {
+                gap: 10px;
+            }
+
+            .rental-tab {
+                padding: 12px 24px;
+                font-size: 0.95rem;
+            }
+
+            .rental-tab i {
+                font-size: 1.2rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .rental-tab {
+                flex: 1 1 calc(50% - 10px);
+                justify-content: center;
+                min-width: 140px;
+            }
+        }
+    </style>
+
+    <style>
+        /* Tab Content Styles */
+        .tab-content-section {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+
+    <!-- Old sections removed, now using tab content above -->
 
     <!-- Statistics Section -->
     <section class="py-5" style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);">
@@ -2427,6 +1936,33 @@ if ($_GET) {
             }
         }
 
+        // Switch between rental type tabs
+        function switchRentalTab(type) {
+            // Update tab states
+            document.querySelectorAll('.rental-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`.rental-tab[data-rental-type="${type}"]`).classList.add('active');
+            
+            // Hide all tab content
+            document.querySelectorAll('.tab-content-section').forEach(content => {
+                content.style.display = 'none';
+            });
+            
+            // Show selected tab content with animation
+            const selectedContent = document.getElementById(`${type}-content`);
+            if (selectedContent) {
+                selectedContent.style.display = 'block';
+                selectedContent.style.animation = 'fadeIn 0.5s ease-in';
+            }
+            
+            // Scroll to top of content
+            window.scrollTo({
+                top: document.querySelector('.rental-tabs-section').offsetTop - 100,
+                behavior: 'smooth'
+            });
+        }
+
         // Load saved language preference on page load
         const COMPARE_APARTMENTS = <?php echo json_encode(mock_get_all_apartments(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
 
@@ -2448,8 +1984,7 @@ if ($_GET) {
             initializeCounters();
             initializeCardInteractions();
 
-            // Initialize hero search tabs (monthly / daily)
-            initializeSearchTabs();
+
 
             initializeCompareFeature();
         });
@@ -2724,82 +2259,7 @@ if ($_GET) {
         // ไม่เรียกใช้ effect นี้แล้วเพื่อลดการกระพริบของรูป
         // addImageLoadingEffect();
 
-        // Initialize search tabs (monthly / daily)
-        function initializeSearchTabs() {
-            const tabs = document.querySelectorAll('.search-tab');
-            const rentalTypeInput = document.getElementById('rental_type_input');
-            const priceSelect = document.querySelector('select[name="price_range"]');
 
-            if (!tabs.length || !rentalTypeInput) return;
-
-            // Function to update price options based on type
-            function updatePriceOptions(type) {
-                if (!priceSelect) return;
-                
-                // Store current selection if possible, though ranges differ so it might not match
-                const currentValue = priceSelect.value;
-                priceSelect.innerHTML = '<option value="">ทุกช่วงราคา</option>';
-                
-                if (type === 'daily') {
-                    const dailyOptions = [
-                        { val: '0-500', text: 'ไม่เกิน 500 บาท/คืน' },
-                        { val: '500-1000', text: '500 - 1,000 บาท/คืน' },
-                        { val: '1000-2000', text: '1,000 - 2,000 บาท/คืน' },
-                        { val: '2000-999999', text: 'มากกว่า 2,000 บาท/คืน' }
-                    ];
-                    dailyOptions.forEach(opt => {
-                        const option = document.createElement('option');
-                        option.value = opt.val;
-                        option.textContent = opt.text;
-                        priceSelect.appendChild(option);
-                    });
-                } else {
-                    const monthlyOptions = [
-                        { val: '0-5000', text: 'ไม่เกิน 5,000 บาท/เดือน' },
-                        { val: '5000-8000', text: '5,000 - 8,000 บาท/เดือน' },
-                        { val: '8000-12000', text: '8,000 - 12,000 บาท/เดือน' },
-                        { val: '12000-20000', text: '12,000 - 20,000 บาท/เดือน' },
-                        { val: '20000-999999', text: 'มากกว่า 20,000 บาท/เดือน' }
-                    ];
-                    monthlyOptions.forEach(opt => {
-                        const option = document.createElement('option');
-                        option.value = opt.val;
-                        option.textContent = opt.text;
-                        // Try to preserve selection if it matches a range
-                        if (opt.val === currentValue) option.selected = true;
-                        priceSelect.appendChild(option);
-                    });
-                }
-            }
-
-            tabs.forEach(tab => {
-                tab.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    
-                    tabs.forEach(t => t.classList.remove('active'));
-                    this.classList.add('active');
-
-                    const type = this.dataset.rentalType || 'monthly';
-                    rentalTypeInput.value = type;
-                    
-                    updatePriceOptions(type);
-                });
-            });
-            
-            // Initialize state based on current input value (from PHP or default)
-            if (rentalTypeInput.value) {
-                const activeTab = document.querySelector(`.search-tab[data-rental-type="${rentalTypeInput.value}"]`);
-                if (activeTab) {
-                    tabs.forEach(t => t.classList.remove('active'));
-                    activeTab.classList.add('active');
-                    // Only update options if we are not on the default (monthly) or if we want to ensure consistency
-                    // But since PHP renders monthly options by default, we only need to update if it's daily
-                    if (rentalTypeInput.value === 'daily') {
-                        updatePriceOptions('daily');
-                    }
-                }
-            }
-        }
 
         // Modern Search Functions
         // Toggle rental type and update filters

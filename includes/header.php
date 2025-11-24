@@ -125,9 +125,9 @@ if (isLoggedIn()) {
             <!-- Right Actions -->
             <div class="nav-actions">
                 <!-- Language Toggle -->
-                <button class="icon-btn lang-toggle-btn" id="langToggleBtn" type="button" data-tooltip="Language" data-current-lang="<?php echo htmlspecialchars($currentLang); ?>" aria-label="<?php echo $currentLang === 'th' ? 'ภาษา (TH)' : 'Language (EN)'; ?>">
+                <!-- <button class="icon-btn lang-toggle-btn" id="langToggleBtn" type="button" data-tooltip="Language" data-current-lang="<?php echo htmlspecialchars($currentLang); ?>" aria-label="<?php echo $currentLang === 'th' ? 'ภาษา (TH)' : 'Language (EN)'; ?>">
                     <span id="langFlag" class="lang-flag <?php echo $currentLang === 'th' ? 'flag-th' : 'flag-en'; ?>"></span>
-                </button>
+                </button> -->
 
                 <?php if (isLoggedIn()): ?>
 

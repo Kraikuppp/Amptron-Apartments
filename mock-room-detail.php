@@ -164,6 +164,12 @@ $hasDaily   = in_array('daily', $rentalTypes, true) || !empty($apartment['price_
                     <?php if (!empty($apartment['amenities'])): ?>
                         <h6 class="mb-2">สิ่งอำนวยความสะดวก</h6>
                         <p>
+                            <?php if (!empty($apartment['max_occupancy'])): ?>
+                                <span class="badge rounded-pill bg-primary text-white me-1 mb-1">
+                                    <i class="bi bi-people-fill"></i>
+                                    อยู่ได้ <?php echo (int)$apartment['max_occupancy']; ?> คน
+                                </span>
+                            <?php endif; ?>
                             <?php foreach ($apartment['amenities'] as $am): ?>
                                 <span class="badge rounded-pill bg-light text-dark border me-1 mb-1">
                                     <i class="bi bi-check-circle-fill text-success"></i>
