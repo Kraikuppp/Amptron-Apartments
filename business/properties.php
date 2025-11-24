@@ -35,7 +35,9 @@ if (!isset($properties)) {
             "status" => "rented",
             "tenant" => "สมชาย ใจดี",
             "contract_end" => "2024-12-31",
-            "image" => "https://via.placeholder.com/100"
+            "image" => "https://via.placeholder.com/100",
+            "contract_file" => "https://placehold.co/600x800/e9ecef/6c757d?text=Rental+Contract",
+            "id_card_file" => "https://placehold.co/600x400/e9ecef/6c757d?text=ID+Card"
         ],
         [
             "id" => 2,
@@ -45,7 +47,9 @@ if (!isset($properties)) {
             "status" => "available",
             "tenant" => "-",
             "contract_end" => "-",
-            "image" => "https://via.placeholder.com/100"
+            "image" => "https://via.placeholder.com/100",
+            "contract_file" => "",
+            "id_card_file" => ""
         ],
         [
             "id" => 3,
@@ -55,7 +59,9 @@ if (!isset($properties)) {
             "status" => "rented",
             "tenant" => "วิภา สุขใจ",
             "contract_end" => "2024-05-20",
-            "image" => "https://via.placeholder.com/100"
+            "image" => "https://via.placeholder.com/100",
+            "contract_file" => "https://placehold.co/600x800/e9ecef/6c757d?text=Rental+Contract",
+            "id_card_file" => "https://placehold.co/600x400/e9ecef/6c757d?text=ID+Card"
         ],
         [
             "id" => 4,
@@ -65,7 +71,9 @@ if (!isset($properties)) {
             "status" => "maintenance",
             "tenant" => "-",
             "contract_end" => "-",
-            "image" => "https://via.placeholder.com/100"
+            "image" => "https://via.placeholder.com/100",
+            "contract_file" => "",
+            "id_card_file" => ""
         ]
     ];
 }
@@ -281,8 +289,17 @@ if (!isset($properties)) {
                                     <td><?php echo $prop['tenant']; ?></td>
                                     <td><?php echo $prop['contract_end']; ?></td>
                                     <td class="text-end">
-                                        <button class="btn btn-sm btn-light rounded-circle text-primary me-1"><i class="bi bi-pencil"></i></button>
-                                        <button class="btn btn-sm btn-light rounded-circle text-danger"><i class="bi bi-trash"></i></button>
+                                        <button class="btn btn-sm btn-light rounded-circle text-info me-1" 
+                                                onclick="viewDocuments('<?php echo $prop['room_number']; ?>', '<?php echo $prop['contract_file']; ?>', '<?php echo $prop['id_card_file']; ?>')"
+                                                title="ดูเอกสาร">
+                                            <i class="bi bi-file-earmark-text"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-light rounded-circle text-primary me-1" 
+                                                onclick="editPrice(<?php echo $prop['id']; ?>, '<?php echo $prop['room_number']; ?>', <?php echo $prop['price']; ?>)"
+                                                title="แก้ไขราคา">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-light rounded-circle text-danger" title="ลบห้องพัก"><i class="bi bi-trash"></i></button>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -306,6 +323,120 @@ if (!isset($properties)) {
     </div>
 
     <?php include "../includes/footer.php"; ?>
+    <!-- Edit Price Modal -->
+    <div class="modal fade" id="editPriceModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 20px; border: none;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">แก้ไขราคาห้องพัก</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="editPriceForm">
+                        <input type="hidden" id="editRoomId">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">ห้องเลขที่</label>
+                            <input type="text" class="form-control" id="editRoomNumber" readonly>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label text-muted">ราคาต่อเดือน (บาท)</label>
+                            <input type="number" class="form-control form-control-lg fw-bold text-primary" id="editRoomPrice" min="0" step="100">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 fw-bold">บันทึกการเปลี่ยนแปลง</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Documents Modal -->
+    <div class="modal fade" id="viewDocsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content" style="border-radius: 20px; border: none;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">เอกสารห้อง <span id="docsRoomNumber"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <ul class="nav nav-pills nav-fill mb-4 p-1 bg-light rounded-pill" id="docsTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active rounded-pill" id="contract-tab" data-bs-toggle="tab" data-bs-target="#contract-pane" type="button" role="tab">สัญญาเช่า</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link rounded-pill" id="idcard-tab" data-bs-toggle="tab" data-bs-target="#idcard-pane" type="button" role="tab">บัตรประชาชน</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="docsTabContent">
+                        <div class="tab-pane fade show active text-center" id="contract-pane" role="tabpanel">
+                            <div id="contractContent">
+                                <img src="" id="contractImage" class="img-fluid rounded shadow-sm mb-3" style="max-height: 600px;">
+                                <a href="#" id="contractDownload" class="btn btn-outline-primary rounded-pill" download>
+                                    <i class="bi bi-download me-2"></i> ดาวน์โหลดสัญญา
+                                </a>
+                            </div>
+                            <div id="noContract" class="py-5 text-muted">
+                                <i class="bi bi-file-earmark-x fs-1 d-block mb-2"></i>
+                                ไม่พบเอกสารสัญญาเช่า
+                            </div>
+                        </div>
+                        <div class="tab-pane fade text-center" id="idcard-pane" role="tabpanel">
+                            <div id="idCardContent">
+                                <img src="" id="idCardImage" class="img-fluid rounded shadow-sm mb-3" style="max-height: 400px;">
+                            </div>
+                            <div id="noIdCard" class="py-5 text-muted">
+                                <i class="bi bi-person-badge fs-1 d-block mb-2"></i>
+                                ไม่พบเอกสารบัตรประชาชน
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function editPrice(id, roomNumber, price) {
+            document.getElementById('editRoomId').value = id;
+            document.getElementById('editRoomNumber').value = roomNumber;
+            document.getElementById('editRoomPrice').value = price;
+            new bootstrap.Modal(document.getElementById('editPriceModal')).show();
+        }
+
+        function viewDocuments(roomNumber, contractUrl, idCardUrl) {
+            document.getElementById('docsRoomNumber').textContent = roomNumber;
+            
+            // Contract
+            if (contractUrl) {
+                document.getElementById('contractContent').style.display = 'block';
+                document.getElementById('noContract').style.display = 'none';
+                document.getElementById('contractImage').src = contractUrl;
+                document.getElementById('contractDownload').href = contractUrl;
+            } else {
+                document.getElementById('contractContent').style.display = 'none';
+                document.getElementById('noContract').style.display = 'block';
+            }
+
+            // ID Card
+            if (idCardUrl) {
+                document.getElementById('idCardContent').style.display = 'block';
+                document.getElementById('noIdCard').style.display = 'none';
+                document.getElementById('idCardImage').src = idCardUrl;
+            } else {
+                document.getElementById('idCardContent').style.display = 'none';
+                document.getElementById('noIdCard').style.display = 'block';
+            }
+
+            new bootstrap.Modal(document.getElementById('viewDocsModal')).show();
+        }
+
+        document.getElementById('editPriceForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            // In a real app, you would send an AJAX request to update the price
+            alert('บันทึกราคาใหม่เรียบร้อยแล้ว');
+            bootstrap.Modal.getInstance(document.getElementById('editPriceModal')).hide();
+            location.reload(); // Refresh to see changes (mock)
+        });
+    </script>
 </body>
 </html>

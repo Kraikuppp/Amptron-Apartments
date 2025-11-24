@@ -164,8 +164,41 @@ if (!$hasDB || !$pdo) {
             "end_date" => date("Y-m-d", strtotime("+25 days")),
             "days_remaining" => 25,
             "status" => "warning"
+        ],
+        [
+            "id" => 4,
+            "room_number" => "D402",
+            "tenant_name" => "คุณสมหญิง จริงใจ",
+            "end_date" => date("Y-m-d", strtotime("+45 days")),
+            "days_remaining" => 45,
+            "status" => "warning"
+        ],
+        [
+            "id" => 5,
+            "room_number" => "E505",
+            "tenant_name" => "คุณมานะ อดทน",
+            "end_date" => date("Y-m-d", strtotime("+75 days")),
+            "days_remaining" => 75,
+            "status" => "normal"
         ]
     ];
+
+    // คำนวณสถิติสัญญาใกล้หมดอายุ
+    $expiringStats = [
+        "30_days" => 0,
+        "60_days" => 0,
+        "90_days" => 0
+    ];
+
+    foreach ($expiringContractsList as $contract) {
+        if ($contract['days_remaining'] <= 30) {
+            $expiringStats['30_days']++;
+        } elseif ($contract['days_remaining'] <= 60) {
+            $expiringStats['60_days']++;
+        } elseif ($contract['days_remaining'] <= 90) {
+            $expiringStats['90_days']++;
+        }
+    }
 
     // คำขอรับบริการ
     $serviceRequests = [
@@ -299,7 +332,90 @@ if (!$hasDB || !$pdo) {
         $serviceRequests = [];
         $stats["total_revenue"] = 0;
         $stats["expiring_contracts"] = 0;
+        $stats["electricity_income"] = 0;
+        $stats["electricity_expense"] = 0;
+        $expiringStats = [
+            "30_days" => 0,
+            "60_days" => 0,
+            "90_days" => 0
+        ];
     }
+}
+
+// ถ้าไม่มี Database ให้ใช้ Mock Data คำนวณ (ทำไปแล้วข้างบน)
+// แต่ถ้ามี Database ต้องคำนวณ expiringStats จากข้อมูลจริง (ถ้ายังไม่ได้ทำ)
+if ($hasDB && $pdo) {
+    // ดึงข้อมูลสัญญาที่กำลังจะหมดอายุภายใน 90 วัน
+    try {
+        $stmt = $pdo->prepare("
+            SELECT 
+                r.room_number,
+                t.first_name, t.last_name,
+                c.end_date,
+                DATEDIFF(c.end_date, CURDATE()) as days_remaining
+            FROM contracts c
+            JOIN rooms r ON c.room_id = r.id
+            JOIN tenants t ON c.tenant_id = t.id
+            JOIN business_properties bp ON r.property_id = bp.id
+            WHERE bp.business_id = ? 
+            AND c.status = 'active'
+            AND c.end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 90 DAY)
+            ORDER BY c.end_date ASC
+        ");
+        $stmt->execute([$userId]);
+        $expiringContractsList = $stmt->fetchAll();
+
+        $expiringStats = [
+            "30_days" => 0,
+            "60_days" => 0,
+            "90_days" => 0
+        ];
+
+        foreach ($expiringContractsList as $contract) {
+            if ($contract['days_remaining'] <= 30) {
+                $expiringStats['30_days']++;
+            } elseif ($contract['days_remaining'] <= 60) {
+                $expiringStats['60_days']++;
+            } elseif ($contract['days_remaining'] <= 90) {
+                $expiringStats['90_days']++;
+            }
+        }
+        
+        // Update total expiring contracts in stats
+        $stats['expiring_contracts'] = count($expiringContractsList);
+
+    } catch (PDOException $e) {
+        $expiringStats = ["30_days" => 0, "60_days" => 0, "90_days" => 0];
+        $expiringContractsList = [];
+    }
+
+    // คำนวณรายรับ-รายจ่ายค่าไฟ (สมมติว่ามีการบันทึกมิเตอร์)
+    // รายรับ = หน่วยที่ใช้ * ราคาต่อหน่วยที่เก็บผู้เช่า (เช่น 7 บาท)
+    // รายจ่าย = หน่วยที่ใช้ * ราคาต้นทุนการไฟฟ้า (เช่น 4.5 บาท)
+    try {
+        $stmt = $pdo->prepare("
+            SELECT SUM(units_used) as total_units
+            FROM meter_readings mr
+            JOIN business_properties bp ON mr.property_id = bp.id
+            WHERE bp.business_id = ? 
+            AND MONTH(reading_date) = MONTH(CURRENT_DATE())
+            AND YEAR(reading_date) = YEAR(CURRENT_DATE())
+        ");
+        $stmt->execute([$userId]);
+        $result = $stmt->fetch();
+        $totalUnits = $result['total_units'] ?? 0;
+
+        $stats['electricity_income'] = $totalUnits * 7; // สมมติเก็บ 7 บาท/หน่วย
+        $stats['electricity_expense'] = $totalUnits * 4.5; // สมมติต้นทุน 4.5 บาท/หน่วย
+        
+    } catch (PDOException $e) {
+        $stats['electricity_income'] = 0;
+        $stats['electricity_expense'] = 0;
+    }
+} else {
+    // Mock Data for Electricity
+    $stats['electricity_income'] = 45280; // รายรับจากผู้เช่า
+    $stats['electricity_expense'] = 29150; // รายจ่ายให้การไฟฟ้า (สมมติ)
 }
 ?>
 <!DOCTYPE html>
@@ -707,11 +823,30 @@ if (!$hasDB || !$pdo) {
                                             <p class="mb-1 opacity-75">สัญญาใกล้หมดอายุ</p>
                                             <h2 class="mb-0 fw-bold"><?php echo $stats["expiring_contracts"] ?? 0; ?> ห้อง</h2>
                                         </div>
-                                    
+                                        <div class="rounded-circle bg-white bg-opacity-25 p-2">
+                                            <i class="bi bi-clock-history fs-4"></i>
+                                        </div>
                                     </div>
-                                    <div class="d-flex align-items-center gap-2 opacity-90">
-                                        <i class="bi bi-clock-history"></i>
-                                        <small>ต้องดำเนินการใน 30 วัน</small>
+                                    
+                                    <div class="row g-2 mt-3">
+                                        <div class="col-4">
+                                            <div class="bg-white bg-opacity-10 rounded p-2 text-center">
+                                                <small class="d-block opacity-75" style="font-size: 0.7rem;">30 วัน</small>
+                                                <span class="fw-bold"><?php echo $expiringStats['30_days']; ?></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="bg-white bg-opacity-10 rounded p-2 text-center">
+                                                <small class="d-block opacity-75" style="font-size: 0.7rem;">60 วัน</small>
+                                                <span class="fw-bold"><?php echo $expiringStats['60_days']; ?></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="bg-white bg-opacity-10 rounded p-2 text-center">
+                                                <small class="d-block opacity-75" style="font-size: 0.7rem;">90 วัน</small>
+                                                <span class="fw-bold"><?php echo $expiringStats['90_days']; ?></span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -720,13 +855,23 @@ if (!$hasDB || !$pdo) {
                                     <div class="d-flex justify-content-between align-items-start mb-3">
                                         <div>
                                             <p class="mb-1 opacity-75">ค่าไฟเดือนนี้</p>
-                                            <h2 class="mb-0 fw-bold">฿<?php echo number_format($stats["total_electricity_cost"] ?? 0); ?></h2>
+                                            <h2 class="mb-0 fw-bold">฿<?php echo number_format($stats["electricity_income"] ?? 0); ?></h2>
+                                            <small class="opacity-75">รายรับจากห้องพัก</small>
                                         </div>
-                                    
+                                        <div class="rounded-circle bg-white bg-opacity-25 p-2">
+                                            <i class="bi bi-lightning-charge-fill fs-4"></i>
+                                        </div>
                                     </div>
-                                    <div class="d-flex align-items-center gap-2 opacity-90">
-                                        <i class="bi bi-lightning-charge-fill"></i>
-                                        <small>รวมทุกห้อง</small>
+                                    
+                                    <div class="mt-3 pt-3 border-top border-white border-opacity-25">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="opacity-90 small">รายจ่าย (การไฟฟ้า)</span>
+                                            <span class="fw-bold">฿<?php echo number_format($stats["electricity_expense"] ?? 0); ?></span>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center mt-1">
+                                            <span class="opacity-90 small">กำไรส่วนต่าง</span>
+                                            <span class="fw-bold text-white">+฿<?php echo number_format(($stats["electricity_income"] ?? 0) - ($stats["electricity_expense"] ?? 0)); ?></span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
