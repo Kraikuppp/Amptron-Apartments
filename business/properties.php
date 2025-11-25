@@ -68,12 +68,12 @@ if (!isset($properties)) {
             "title" => "ห้อง 202 (VIP)",
             "room_number" => "202",
             "price" => 6500,
-            "status" => "maintenance",
-            "tenant" => "-",
-            "contract_end" => "-",
+            "status" => "rented",
+            "tenant" => "Yammyko",
+            "contract_end" => "2026-1-18",
             "image" => "https://via.placeholder.com/100",
-            "contract_file" => "",
-            "id_card_file" => ""
+            "contract_file" => "https://placehold.co/600x800/e9ecef/6c757d?text=Rental+Contract",
+            "id_card_file" => "https://placehold.co/600x400/e9ecef/6c757d?text=ID+Card"
         ]
     ];
 }
